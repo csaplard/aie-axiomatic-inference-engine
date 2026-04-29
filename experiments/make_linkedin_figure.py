@@ -155,6 +155,6 @@ fig.text(
 plt.tight_layout()
 plt.subplots_adjust(top=0.88, bottom=0.12)
 
-out = ROOT / "experiments" / "linkedin_figure.png"
+out = ROOT / "experiments" / "two_mechanism_result.png"
 plt.savefig(out, dpi=180, bbox_inches="tight", facecolor="white")
 print(f"Mentve: {out}")

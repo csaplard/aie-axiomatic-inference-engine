@@ -2,14 +2,14 @@
 
 > **Egy hipotézis, amit a saját kontroll-kísérlete kettéhasított.** Az eredeti egy-mechanizmus tézis ("a kauzális struktúra és az immunrendszer együtt építi a topológiai mélységet") a 30-seedes 4-karú strict-immune kísérletben **két független, statisztikailag szignifikáns mechanizmusra** vált szét.
 
-![Kettő-mechanizmus kép — kontroll-kísérlet eredménye](experiments/linkedin_figure.png)
+![Kettő-mechanizmus kép — kontroll-kísérlet eredménye](experiments/two_mechanism_result.png)
 
 ## A két megerősített mechanizmus
 
 | Mechanizmus | Hatás | Statisztika |
 |---|---|---|
 | **TOPO ← strukturáltság** | Strukturált kauzális regiszteren a topológiai mélység ~50%-kal magasabb mint random gráfon | Mann-Whitney U, **p = 1.1·10⁻¹¹** (n=30 seed) |
-| **Q ← immunrendszer** | Az immunrendszer az élsűrűséget szabályozza, ~17% csökkenés a strikt karon | Mann-Whitney U, **p = 1.2·10⁻¹¹**, replikálva 3 regiszter-méreten |
+| **Q ← immunrendszer** | Az immunrendszer az élsűrűséget szabályozza | **p < 10⁻³ mindhárom regiszter-méreten** (15n / 15n-extra-dense / 48n); az effektus mérete regiszter-méret-függő (kis méreten saturáció: ~0.6%, 48n-en ~17%) |
 | **TOPO ⊥ immunrendszer** | Az immunrendszer **nem** befolyásolja a topológiai mélységet | p > 0.3 mindenhol |
 
 A két mechanizmus **független** és **különböző gráf-tulajdonságot ír**. Ez gazdagabb és pontosabb tézis, mint az eredeti egy-mechanizmus kép volt.
