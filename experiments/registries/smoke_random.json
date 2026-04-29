@@ -1,0 +1,299 @@
+{
+  "version": "control-random-1.0",
+  "schema_version": 1,
+  "description": "Random kontroll: 20 csúcs, density=0.05, seed=1",
+  "nodes": [
+    {
+      "id": "rand_0",
+      "domain": "LOGIC",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_0"
+      ]
+    },
+    {
+      "id": "rand_1",
+      "domain": "QM",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_1"
+      ]
+    },
+    {
+      "id": "rand_2",
+      "domain": "INFO",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_2"
+      ]
+    },
+    {
+      "id": "rand_3",
+      "domain": "Newtoni-mechanika",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_3"
+      ]
+    },
+    {
+      "id": "rand_4",
+      "domain": "LOGIC",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_4"
+      ]
+    },
+    {
+      "id": "rand_5",
+      "domain": "QM",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_5"
+      ]
+    },
+    {
+      "id": "rand_6",
+      "domain": "INFO",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_6"
+      ]
+    },
+    {
+      "id": "rand_7",
+      "domain": "Newtoni-mechanika",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_7"
+      ]
+    },
+    {
+      "id": "rand_8",
+      "domain": "LOGIC",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_8"
+      ]
+    },
+    {
+      "id": "rand_9",
+      "domain": "QM",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_9"
+      ]
+    },
+    {
+      "id": "rand_10",
+      "domain": "INFO",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_10"
+      ]
+    },
+    {
+      "id": "rand_11",
+      "domain": "Newtoni-mechanika",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_11"
+      ]
+    },
+    {
+      "id": "rand_12",
+      "domain": "LOGIC",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_12"
+      ]
+    },
+    {
+      "id": "rand_13",
+      "domain": "QM",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_13"
+      ]
+    },
+    {
+      "id": "rand_14",
+      "domain": "INFO",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_14"
+      ]
+    },
+    {
+      "id": "rand_15",
+      "domain": "Newtoni-mechanika",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_15"
+      ]
+    },
+    {
+      "id": "rand_16",
+      "domain": "LOGIC",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_16"
+      ]
+    },
+    {
+      "id": "rand_17",
+      "domain": "QM",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_17"
+      ]
+    },
+    {
+      "id": "rand_18",
+      "domain": "INFO",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_18"
+      ]
+    },
+    {
+      "id": "rand_19",
+      "domain": "Newtoni-mechanika",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "rand_19"
+      ]
+    }
+  ],
+  "logical_negation_pairs": [],
+  "causal_edges": [
+    [
+      "rand_0",
+      "rand_10"
+    ],
+    [
+      "rand_0",
+      "rand_14"
+    ],
+    [
+      "rand_1",
+      "rand_0"
+    ],
+    [
+      "rand_1",
+      "rand_2"
+    ],
+    [
+      "rand_1",
+      "rand_8"
+    ],
+    [
+      "rand_1",
+      "rand_17"
+    ],
+    [
+      "rand_2",
+      "rand_19"
+    ],
+    [
+      "rand_3",
+      "rand_15"
+    ],
+    [
+      "rand_3",
+      "rand_16"
+    ],
+    [
+      "rand_4",
+      "rand_16"
+    ],
+    [
+      "rand_5",
+      "rand_18"
+    ],
+    [
+      "rand_6",
+      "rand_11"
+    ],
+    [
+      "rand_6",
+      "rand_12"
+    ],
+    [
+      "rand_7",
+      "rand_8"
+    ],
+    [
+      "rand_7",
+      "rand_18"
+    ],
+    [
+      "rand_7",
+      "rand_19"
+    ],
+    [
+      "rand_9",
+      "rand_8"
+    ],
+    [
+      "rand_9",
+      "rand_11"
+    ],
+    [
+      "rand_10",
+      "rand_14"
+    ],
+    [
+      "rand_12",
+      "rand_9"
+    ],
+    [
+      "rand_13",
+      "rand_10"
+    ],
+    [
+      "rand_13",
+      "rand_16"
+    ],
+    [
+      "rand_14",
+      "rand_15"
+    ],
+    [
+      "rand_14",
+      "rand_16"
+    ],
+    [
+      "rand_16",
+      "rand_18"
+    ],
+    [
+      "rand_18",
+      "rand_7"
+    ],
+    [
+      "rand_19",
+      "rand_12"
+    ]
+  ],
+  "forbidden_edges": []
+}

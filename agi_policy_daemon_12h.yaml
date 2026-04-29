@@ -1,0 +1,34 @@
+# 12 órás lazított daemon futás — külön naplók, hogy ne keveredjenek más tesztekkel.
+# max_runtime_seconds: 43200 = 12 h
+
+optimization_policy:
+  q_stability:
+    window_size: 20
+    q_threshold_base: 0.77
+  sparsity:
+    nnz_ratio_threshold: 0.12
+    suggest_sparse_backend: true
+  backend_efficiency:
+    b_boost_on_stable_q: 0.02
+    b_max_limit: 1.0
+  scheduling:
+    sleep_s_base: 0.0003
+    adaptive_sleep_enabled: true
+    cpu_target_percent: 85
+
+discovery:
+  enabled: true
+  daemon_mode: true
+  ignore_forbidden_edges: true
+  ignore_negation_contradictions: true
+  log_path: discovery_log_12h.txt
+  # Lazább, mint a 0.05-ös példa: több sor kerül naplózásra (alacsony Q mellett is)
+  log_q_threshold: 0.02
+  log_cross_domain_only: false
+  telemetry_enabled: true
+  telemetry_every_n_steps: 50
+  telemetry_log_path: telemetry_12h.log
+  max_runtime_seconds: 43200
+  trust_store_path: hypotheses/edge_trust.json
+  discovery_trust_weight: 0.08
+  discovery_skip_log_trust_below: -0.95

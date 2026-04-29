@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Kísérleti futási outputok — reprodukálhatók a scriptekkel
+experiments/runs/
+*.log
+discovery_log*.txt
+telemetry*.log
+test_disc.log
+fisher_out.csv
+fisher_telemetry_first_out/
+
+# Nagy nyers adat (>200 MB, nem tartozik a repóhoz)
+readout_raw_data/
+
+# Tanulási / felhasználói állapot
+communication/hu_learned.yaml
+hypotheses/discovered_edges.jsonl
+hypotheses/edge_trust.json
+
+# Operációs rendszer / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~

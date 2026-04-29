@@ -1,0 +1,37 @@
+# Példa: hosszú futás, magas CPU-cél, lazított immun (tiltott élek + negáció kihagyható).
+# Új futás: külön telemetria, alacsony discovery_log küszöb (Q~0.17 mellett is naplóz).
+
+optimization_policy:
+  q_stability:
+    window_size: 20
+    q_threshold_base: 0.77
+  sparsity:
+    nnz_ratio_threshold: 0.12
+    suggest_sparse_backend: true
+  backend_efficiency:
+    b_boost_on_stable_q: 0.02
+    b_max_limit: 1.0
+  scheduling:
+    sleep_s_base: 0.0005
+    adaptive_sleep_enabled: true
+    cpu_target_percent: 80
+
+discovery:
+  enabled: true
+  daemon_mode: true
+  # daemon_mode: true esetén alapból nincs Hamilton-gyűrű (seed_hamilton_ring felülírható)
+  ignore_forbidden_edges: true
+  # Kísérleti: logical_negation_pairs nem utasítja el az élt (ellentmondásos gráf lehetséges)
+  ignore_negation_contradictions: true
+  log_path: discovery_log_relaxed.txt
+  # Régi 0.77 mellett üres maradt a log alacsony Q-nál
+  log_q_threshold: 0.05
+  log_cross_domain_only: false
+  telemetry_enabled: true
+  telemetry_every_n_steps: 100
+  telemetry_log_path: telemetry_relaxed.log
+  # Tesztfutás plafon: 24 óra (módosítható)
+  max_runtime_seconds: 86400
+  trust_store_path: hypotheses/edge_trust.json
+  discovery_trust_weight: 0.15
+  discovery_skip_log_trust_below: -0.6

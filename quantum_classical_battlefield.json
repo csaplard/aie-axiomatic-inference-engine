@@ -1,0 +1,68 @@
+{
+  "version": "1.0",
+  "note": "Szerkesztői vázlat (object form); a motor a teljes axioms_registry.json-t tölti. Ez a fájl dokumentálja a csatatér sémát.",
+  "logical_negation_pairs": [
+    ["classical_determinism", "quantum_indeterminism"],
+    ["local_realism", "quantum_nonlocality"],
+    ["continuous_energy", "discrete_energy_quanta"],
+    ["absolute_time", "relative_time"]
+  ],
+  "axioms": [
+    {
+      "id": "classical_determinism",
+      "domain": "CLASSICAL_MECH",
+      "keywords": ["kezdeti feltetel", "kiszamithato", "newton", "determinisztikus", "trajektoria"],
+      "formula": "F = dp/dt",
+      "description": "Ha ismerjük egy zárt rendszer pontos kezdeti állapotát, a jövőbeli állapota tetszőleges pontossággal meghatározható."
+    },
+    {
+      "id": "quantum_indeterminism",
+      "domain": "QM",
+      "keywords": ["heisenberg", "hatarozatlansag", "valoszinuseg", "bizonytalansag", "born-szabaly"],
+      "formula": "dx * dp >= hbar/2",
+      "description": "Egy kvantumrendszer bizonyos konjugált változói nem mérhetők egyszerre tetszőleges pontossággal."
+    },
+    {
+      "id": "local_realism",
+      "domain": "RELATIVITY",
+      "keywords": ["fénysebesség", "lokalitás", "einstein", "kauzális kúp", "nincs távolhatás"],
+      "formula": "v <= c",
+      "description": "Semmilyen fizikai hatás vagy információ nem terjedhet gyorsabban a vákuumbeli fénysebességnél (c)."
+    },
+    {
+      "id": "quantum_nonlocality",
+      "domain": "QM",
+      "keywords": ["összefonódás", "bell-tétel", "epr", "nem-lokális", "azonnati hatás"],
+      "formula": "Bell inequality violation",
+      "description": "Összefonódott részecskék mérésekor a korrelációk megsértik a lokális rejtett paraméterekre vonatkozó Bell-egyenlőtlenségeket."
+    },
+    {
+      "id": "general_relativity_spacetime",
+      "domain": "RELATIVITY",
+      "keywords": ["téridő görbület", "gravitáció", "folytonos", "sokaság", "einstein-egyenlet"],
+      "formula": "G_uv + Lambda*g_uv = (8*pi*G/c^4)*T_uv",
+      "description": "A gravitáció a folytonos téridő görbülete, melyet a tömeg-energia jelenléte határoz meg."
+    },
+    {
+      "id": "planck_scale_finiteness",
+      "domain": "QM",
+      "keywords": ["planck-hossz", "diszkrét téridő", "kvantumhab", "legkisebb távolság"],
+      "formula": "l_p = sqrt(hbar*G / c^3)",
+      "description": "Létezik egy minimális fizikai távolság, amely alatt a folytonos téridő fogalma értelmét veszti."
+    }
+  ],
+  "causal_edges": [
+    {"source": "general_relativity_spacetime", "target": "local_realism"},
+    {"source": "quantum_indeterminism", "target": "quantum_nonlocality"}
+  ],
+  "forbidden_edges": [
+    {"source": "general_relativity_spacetime", "target": "planck_scale_finiteness"},
+    {"source": "classical_determinism", "target": "quantum_nonlocality"}
+  ],
+  "extra_axioms_in_registry": [
+    "continuous_energy",
+    "discrete_energy_quanta",
+    "absolute_time",
+    "relative_time"
+  ]
+}

@@ -1,0 +1,64 @@
+# Magyar nyelvi és viselkedési keret — AIE csevegő (aie_chat.py)
+# Bővíthető: small_talk lista, üzenetsablonok.
+
+language: hu
+locale: hu_HU
+
+# Rövid, kulcsszavas egyezés (részszöveg, kis/nagybetű nélkül)
+small_talk:
+  - keywords: [szia, helló, hello, csá, szevasz, jó napot, jó reggelt, jó estét]
+    response: >-
+      Szia! Ez az axiomatikus következtető mag (AIE) csevegő felülete.
+      Írj egy olyan mondatot, amihez a regiszterben van kulcsszó-horgony,
+      vagy nézd meg a /help parancsot.
+
+  - keywords: [köszönöm, köszi, kösz, hála, megköszönöm]
+    response: Szívesen.
+
+  - keywords: [mit tudsz, mire vagy képes, segítség, súgó]
+    response: Írd be a /help parancsot a részletekért.
+
+messages:
+  banner: |
+    === AIE magyar csevegő ===
+    Kilépés: /quit  |  Súgó: /help
+
+  welcome: >-
+    A bemenetek magyarul vannak kezelve (small talk + derive_statement).
+    Ha a válasz „strukturális hiány”, próbáld: /warmup 2000
+
+  prompt: "Te> "
+
+  help: |
+    Parancsok:
+      /help      - ez a súgó
+      /status    - Q, küszöb, utolsó think sor
+      /warmup N  - N darab think_step (gráf építés; alapértelmezés 500)
+      /learn A | B  - tanítás: ha a szöveg tartalmazza A-t, válasz B (fájlba ment)
+      /tanul ...  - ugyanaz, mint /learn
+      /learned   - listázza a tanult párokat
+      /nyelvtan  - nyelvtani jegyzet (hu_grammar.yaml)
+      /nyelvtan KULCS - egy szekció vagy tip (pl. alap, igemód, ragozás)
+      /szabályok - negációs és tiltott élek (regiszter)
+      /axiómák [DOMAIN] - axióma-lista (pl. THERMO, LOGIC)
+      /útiter vagy /cél - ROADMAP fázisok (rövid)
+      /hipotézis - discovery napló utolsó sorai (--discovery-log)
+      /hipotézis-sync - discovery -> hypotheses/*.jsonl (lásd hypothesis_sync.py)
+      /jó  vagy /jó i j - utolsó (vagy megadott) él trust +0.5 (--trust-store)
+      /rossz [i j] - trust -0.5; ha van helyi i->j él, törli a gráfból
+      /trust [i j] - source_trust megjelenítés
+      /indoklás - utolsó sikeres derive_statement magyar magyarázata
+      /quit      - kilépés
+
+    Üzenet: elobb tanult / small talk, majd derive_statement
+    (ha Q a küszöb felett van, részletes jelentés; különben strukturális hiány).
+
+    Opcionális HTTP API (REPL helyett): python aie_http_server.py --registry axioms_registry.json
+
+    Tanítás: nem neurális modell, hanem kulcsszavas mintaillesztés + mentés.
+
+  structural_gap: >-
+    Strukturális hiány: a gráf Q értéke a küszöb alatt van, vagy nem áll össze
+    következtetési lánc. Próbáld /warmup 2000-et, vagy futtasd a daemont hosszabb ideig.
+
+  goodbye: Viszlát.

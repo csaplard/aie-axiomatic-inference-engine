@@ -1,0 +1,20 @@
+# Magyar nyelvtan — referencia a csevegőhöz (/nyelvtan).
+# Szerkeszd bátran: több blokk, példamondatok. Nem „tanítja” a neurális magot,
+# hanem szabályokat és példákat adsz meg, amit a /nyelvtan kiír.
+
+# Rövid címkék -> szöveg (aie_chat /nyelvtan SECTION)
+sections:
+  alap: |
+    Mondat: alany + állítmány + tárgy / határozók.
+    A szórend rugalmas, de az állítmány gyakran a hangsúly miatt mozog.
+
+  igemód: |
+    Kijelentő, felszólító, kérdő: a mondatvégi írásjel és a szórend segít.
+
+  egyeztetés: |
+    Alany és állítmány szám és személy szerint egyezik (pl. „a fiú fut” / „a fiúk futnak”).
+
+# Opcionális: kulcsszó -> rövid magyarázat (a /nyelvtan KULCS paranccsal egy elem)
+tips:
+  ragozás: "Az ige személyragjai: -ok/-ek/-ök többes számban, stb."
+  határozó: "Hol? Mikor? Hogyan? — gyakran -ban/-ben helyhatározó."

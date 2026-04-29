@@ -1,0 +1,43 @@
+# Daemon első éles feladat — ajánlott beállítás (kód nélküli döntés + ellenőrzőlista)
+#
+# Ajánlat: QUANTUM_CLASSICAL_BOUNDARY (2. opció)
+# Indok: a motor (forbidden_edges, negációs pár, discovery_log keresztdomain,
+#        heurisztikus think_step) erre a feszültségre épült. Mérhető: leghosszabb
+#        ellentmondásmentes lánc, Q, naplóbejegyzések két külön domain között.
+
+recommended_mission: quantum_classical_boundary
+
+# Csatatér mag: axioms_registry.json + quantum_classical_battlefield.json (vázlat)
+battlefield_seed: quantum_classical_battlefield.json
+
+missions:
+  zfc_algebra_bootstrap:
+    summary: "ZFC + Peano + algebrai struktúrák felépítése a gráfban"
+    pros:
+      - Egy tiszta matematikai „labor”
+      - Növelhető a csúcsok száma struktúránként (csoport, gyűrű, test)
+    cons:
+      - A valódi ZFC axiómák (pl. helyettesítés, kiválasztás) sémaszerűek;
+        kulcsszavas gráfban csak szimbolikusan ábrázolhatók — a motor nem
+        tételező bizonyító, így a „ZFC-ből következik” állítások sokszor
+        illusztrációk maradnak
+    daemon_fit: medium
+
+  quantum_classical_boundary:
+    summary: "Klasszikus + kvantum axiómahalmaz tiltott élekkel; leghosszabb konzisztens lánc"
+    pros:
+      - Közvetlenül használja a meglévő immunrendszert és az időnyíl / tiltás logikát
+      - A discovery_log és a Q-küszöb értelmezhető „feszültség” mutatóként
+      - A 50 axióma konkrét, verziózható lista (fájl + regiszter)
+    cons:
+      - A gráf mérete és a Hamilton-gyűrű miatt a „leghosszabb lánc” definícióját
+        érdemes rögzíteni (pl. BFS mélység két rögzített csúcs között)
+    daemon_fit: high
+
+# Indítás előtti ellenőrzőlista (quantum_classical_boundary)
+checklist:
+  - "axioms_registry.json (vagy külön JSON) bővítése ~50 fizikai axióma-csúccsal, domain-címkével"
+  - "forbidden_edges és logical_negation_pairs szándékosan — klasszikus vs. kvantum ütközések"
+  - "agi_policy_daemon.example.yaml vagy egyenértékű: discovery.enabled, daemon_mode, cpu_target_percent"
+  - "discovery_log.txt útvonal és log_q_threshold (pl. 0.77)"
+  - "Baseline: egy futás rövid think_step számmal, majd Daemon hosszú futás"

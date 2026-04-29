@@ -1,0 +1,38 @@
+# Anyagcsere-szabályzat: axiomatikus mag (N*) leválasztva a futtatókörnyezettől.
+# Módosítható futás közben — a PolicyManager hot-reload-olja.
+
+optimization_policy:
+  q_stability:
+    window_size: 20
+    q_threshold_base: 0.77
+  sparsity:
+    nnz_ratio_threshold: 0.12
+    suggest_sparse_backend: true
+  backend_efficiency:
+    b_boost_on_stable_q: 0.02
+    b_max_limit: 1.0
+  scheduling:
+    sleep_s_base: 0.01
+    adaptive_sleep_enabled: true
+    cpu_target_percent: 15
+
+# Felfedező / daemon: hosszú futás, opcionális tiltás-kikapcs, napló
+# Daemon profilhoz: cpu_target_percent: 80, discovery.enabled: true, daemon_mode: true
+discovery:
+  enabled: false
+  daemon_mode: false
+  ignore_forbidden_edges: false
+  log_path: discovery_log.txt
+  log_q_threshold: 0.77
+  log_cross_domain_only: true
+  # Hamilton-gyűrű: false = csak causal_edges (+ identitás), tiszta inf távolság daemonnál
+  seed_hamilton_ring: true
+  telemetry_enabled: false
+  telemetry_every_n_steps: 100
+  telemetry_log_path: telemetry.log
+  # 0 = korlátlan think_loop; pl. 86400 = max. 24 óra
+  max_runtime_seconds: 0
+  # Fázis 5: per-él trust (policy könyvtárához relatív); q_eff = q * (1 + weight * trust)
+  trust_store_path: hypotheses/edge_trust.json
+  discovery_trust_weight: 0.15
+  discovery_skip_log_trust_below: -0.6

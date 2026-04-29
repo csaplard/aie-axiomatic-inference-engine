@@ -1,0 +1,929 @@
+{
+  "version": "1.1-timeless+random-immune-seed42",
+  "description": "Időtlen kísérlet: nincs II. főtétel / Boltzmann / time_arrow; generálva: tools/build_timeless_registry.py | Kontroll: random immun (seed=42).",
+  "nodes": [
+    {
+      "id": "identity",
+      "domain": "LOGIC",
+      "formula": "A = A",
+      "variables": [],
+      "keywords": [
+        "azonossag",
+        "azonosság",
+        "identity",
+        "reflexiv",
+        "onmagaval",
+        "önmagával"
+      ]
+    },
+    {
+      "id": "non_contradiction",
+      "domain": "LOGIC",
+      "formula": "not (A and not A)",
+      "variables": [
+        "A"
+      ],
+      "keywords": [
+        "ellentmondas",
+        "ellentmondás",
+        "nem lehet egyszerre",
+        "non contradiction",
+        "excluded middle"
+      ]
+    },
+    {
+      "id": "zfc_membership",
+      "domain": "ZFC",
+      "formula": "x in A",
+      "variables": [
+        "x",
+        "A"
+      ],
+      "keywords": [
+        "halmaz",
+        "elemi",
+        "membership",
+        "eleme",
+        "zfc",
+        "belong"
+      ]
+    },
+    {
+      "id": "peano_succ",
+      "domain": "LOGIC",
+      "formula": "S(n) = n + 1",
+      "variables": [
+        "n"
+      ],
+      "keywords": [
+        "peano",
+        "rakovetkezo",
+        "rákövetkező",
+        "successor",
+        "diszkret"
+      ]
+    },
+    {
+      "id": "transitivity_impl",
+      "domain": "LOGIC",
+      "formula": "(A implies B) and (B implies C) implies (A implies C)",
+      "variables": [
+        "A",
+        "B",
+        "C"
+      ],
+      "keywords": [
+        "tranzitiv",
+        "transitivity",
+        "kovetkezik",
+        "következik",
+        "implikacio",
+        "implikáció"
+      ]
+    },
+    {
+      "id": "newton_2",
+      "domain": "NEWTON",
+      "formula": "F = m * a = dp/dt",
+      "variables": [
+        "F",
+        "m",
+        "a",
+        "p",
+        "t"
+      ],
+      "keywords": [
+        "newton masodik",
+        "második torveny",
+        "törvény",
+        "F=ma",
+        "erő gyorsulás",
+        "impulzus valtozas",
+        "impulzus változás"
+      ]
+    },
+    {
+      "id": "energy_conservation",
+      "domain": "NEWTON",
+      "formula": "dE = Q - W",
+      "variables": [
+        "E",
+        "Q",
+        "W"
+      ],
+      "keywords": [
+        "energia megm",
+        "megmarad",
+        "first law",
+        "energia megmarad"
+      ]
+    },
+    {
+      "id": "momentum_conservation",
+      "domain": "NEWTON",
+      "formula": "sum p_initial = sum p_final",
+      "variables": [
+        "p"
+      ],
+      "keywords": [
+        "impulzus megm",
+        "momentum",
+        "zart rendszer",
+        "zárt rendszer"
+      ]
+    },
+    {
+      "id": "newton_3",
+      "domain": "NEWTON",
+      "formula": "F_ab = -F_ba",
+      "variables": [
+        "F"
+      ],
+      "keywords": [
+        "ellenhatás",
+        "ellenhatas",
+        "action reaction",
+        "harmadik torveny",
+        "harmadik törvény",
+        "minden hatásnak van ellenhatása",
+        "hatás ellenhatás"
+      ]
+    },
+    {
+      "id": "maxwell_vacuum",
+      "domain": "MAXWELL",
+      "formula": "div E = 0, div B = 0, curl E = -dB/dt, curl B = mu0 eps0 dE/dt",
+      "variables": [
+        "E",
+        "B"
+      ],
+      "keywords": [
+        "maxwell",
+        "vakuum",
+        "elektromagneses",
+        "elektromágneses",
+        "feny terjed",
+        "fény terjed"
+      ]
+    },
+    {
+      "id": "emc2",
+      "domain": "RELATIVITY",
+      "formula": "E = m * c^2",
+      "variables": [
+        "E",
+        "m",
+        "c"
+      ],
+      "keywords": [
+        "e=mc",
+        "tomeg energia",
+        "tömeg energia",
+        "ekvivalencia",
+        "einstein"
+      ]
+    },
+    {
+      "id": "schrodinger",
+      "domain": "QM",
+      "formula": "i*hbar dPsi/dt = H Psi",
+      "variables": [
+        "Psi",
+        "H"
+      ],
+      "keywords": [
+        "schrodinger",
+        "schrödinger",
+        "hullamfuggveny",
+        "hullámfüggvény",
+        "kvantum"
+      ]
+    },
+    {
+      "id": "shannon_H",
+      "domain": "INFO",
+      "formula": "H(X) = -sum p(x_i) log p(x_i)",
+      "variables": [
+        "p",
+        "H"
+      ],
+      "keywords": [
+        "shannon",
+        "informacio entr",
+        "információ entr",
+        "bit",
+        "kodolás",
+        "kódolás"
+      ]
+    },
+    {
+      "id": "heisenberg_uncertainty",
+      "domain": "QM",
+      "formula": "dx * dp >= hbar/2",
+      "variables": [
+        "x",
+        "p"
+      ],
+      "keywords": [
+        "dx",
+        "dp",
+        "hbar",
+        "delta x",
+        "delta p",
+        "heisenberg egyenlet",
+        "heisenberg-egyenlet",
+        "kanonikus kommutator",
+        "uncertainty relation",
+        "meresi korlat egyenlet",
+        "x p kommutator"
+      ]
+    },
+    {
+      "id": "node_force",
+      "domain": "NEWTON",
+      "formula": "F",
+      "variables": [],
+      "keywords": [
+        "ero vektor",
+        "erő vektor",
+        "force vector"
+      ]
+    },
+    {
+      "id": "node_impulse",
+      "domain": "NEWTON",
+      "formula": "p",
+      "variables": [],
+      "keywords": [
+        "impulzus vektor",
+        "momentum p"
+      ]
+    },
+    {
+      "id": "node_mass",
+      "domain": "NEWTON",
+      "formula": "m",
+      "variables": [],
+      "keywords": [
+        "tomeg m",
+        "tömeg m"
+      ]
+    },
+    {
+      "id": "c_regime",
+      "domain": "MAXWELL",
+      "formula": "c = 1/sqrt(mu0 eps0)",
+      "variables": [
+        "c"
+      ],
+      "keywords": [
+        "fenysebesseg",
+        "fénysebesség",
+        "c vakuum",
+        "informacio terjed",
+        "információ terjed"
+      ]
+    },
+    {
+      "id": "quantum_data_stream",
+      "domain": "QM",
+      "formula": "readout bitstring stream from quantum processor",
+      "variables": [],
+      "keywords": [
+        "quantum data stream sycamore readout",
+        "quantum data stream",
+        "sycamore readout",
+        "readout stream",
+        "quantum readout",
+        "sycamore measurement"
+      ]
+    },
+    {
+      "id": "shannon_entropy_max_q",
+      "domain": "INFO",
+      "formula": "H_max = log2(d) for d-outcome quantum measurement alphabet",
+      "variables": [
+        "H"
+      ],
+      "keywords": [
+        "shannon entropy max quantum",
+        "entropy max quantum",
+        "quantum shannon entropy max"
+      ]
+    },
+    {
+      "id": "born_rule_probability",
+      "domain": "QM",
+      "formula": "P(k) = |<k|psi>|^2",
+      "variables": [
+        "P",
+        "psi"
+      ],
+      "keywords": [
+        "born rule probability",
+        "born rule",
+        "measurement probability quantum"
+      ]
+    },
+    {
+      "id": "quantum_mechanics_axiom",
+      "domain": "QM",
+      "formula": "unitary evolution + projection measurement",
+      "variables": [],
+      "keywords": [
+        "quantum mechanics axiom",
+        "unitary evolution measurement",
+        "deterministic unitary evolution"
+      ]
+    },
+    {
+      "id": "literal_P",
+      "domain": "LOGIC",
+      "formula": "P",
+      "variables": [],
+      "keywords": [
+        "literal p"
+      ]
+    },
+    {
+      "id": "literal_not_P",
+      "domain": "LOGIC",
+      "formula": "not P",
+      "variables": [],
+      "keywords": [
+        "literal not p"
+      ]
+    },
+    {
+      "id": "classical_determinism",
+      "domain": "CLASSICAL_MECH",
+      "formula": "F = dp/dt",
+      "variables": [
+        "F",
+        "p",
+        "t"
+      ],
+      "keywords": [
+        "kezdeti feltetel",
+        "kezdeti feltétel",
+        "kiszamithato",
+        "kiszámítható",
+        "newton",
+        "determinisztikus",
+        "trajektoria",
+        "trajektória",
+        "determinisztikus klasszikus"
+      ]
+    },
+    {
+      "id": "quantum_indeterminism",
+      "domain": "QM",
+      "formula": "dx * dp >= hbar/2",
+      "variables": [
+        "x",
+        "p"
+      ],
+      "keywords": [
+        "elvi bizonytalansag",
+        "elvi bizonytalanság",
+        "valoszinusegi hullam",
+        "valószínűségi hullám",
+        "determinizmus hianya",
+        "determinizmus hiánya",
+        "kvantum indeterminizmus",
+        "kvantum elv",
+        "born interpretacio elv"
+      ]
+    },
+    {
+      "id": "local_realism",
+      "domain": "RELATIVITY",
+      "formula": "v <= c",
+      "variables": [
+        "v",
+        "c"
+      ],
+      "keywords": [
+        "fenysebesseg",
+        "fénysebesség",
+        "lokalitas",
+        "lokalitás",
+        "einstein",
+        "kauzalis kup",
+        "kauzális kúp",
+        "nincs tavolhatas",
+        "nincs távolhatás",
+        "lokalitas relativitas"
+      ]
+    },
+    {
+      "id": "quantum_nonlocality",
+      "domain": "QM",
+      "formula": "Bell inequality violation",
+      "variables": [],
+      "keywords": [
+        "osszefonodas",
+        "összefonódás",
+        "bell-tetel",
+        "bell tétel",
+        "epr",
+        "nem-lokalis",
+        "nem lokális",
+        "azonnali hatas",
+        "azonnali hatás",
+        "kvantum nemlokalitas"
+      ]
+    },
+    {
+      "id": "general_relativity_spacetime",
+      "domain": "RELATIVITY",
+      "formula": "G_uv + Lambda*g_uv = (8*pi*G/c^4)*T_uv",
+      "variables": [
+        "G_uv",
+        "g_uv",
+        "T_uv"
+      ],
+      "keywords": [
+        "terido gorbulet",
+        "téridő görbület",
+        "gravitacio",
+        "gravitáció",
+        "folytonos",
+        "sokasag",
+        "sokság",
+        "einstein-egyenlet",
+        "einstein egyenlet",
+        "altalanos relativitas",
+        "általános relativitás"
+      ]
+    },
+    {
+      "id": "planck_scale_finiteness",
+      "domain": "QM",
+      "formula": "l_p = sqrt(hbar*G / c^3)",
+      "variables": [
+        "l_p",
+        "G",
+        "c"
+      ],
+      "keywords": [
+        "planck-hossz",
+        "planck hossz",
+        "diszkret terido",
+        "diszkrét téridő",
+        "kvantumhab",
+        "kvantum hab",
+        "legkisebb tavolsag",
+        "legkisebb távolság"
+      ]
+    },
+    {
+      "id": "continuous_energy",
+      "domain": "CLASSICAL_MECH",
+      "formula": "continuous spectrum E",
+      "variables": [
+        "E"
+      ],
+      "keywords": [
+        "continuous energy",
+        "folytonos energia",
+        "klasszikus energia spektrum"
+      ]
+    },
+    {
+      "id": "discrete_energy_quanta",
+      "domain": "QM",
+      "formula": "E_n = n hbar omega",
+      "variables": [
+        "E",
+        "n"
+      ],
+      "keywords": [
+        "discrete energy",
+        "diszkret energia",
+        "energia kvantum",
+        "kvantalt energia"
+      ]
+    },
+    {
+      "id": "absolute_time",
+      "domain": "NEWTON",
+      "formula": "t universal Newton",
+      "variables": [
+        "t"
+      ],
+      "keywords": [
+        "absolute time",
+        "abszolut ido",
+        "abszolút idő",
+        "newton ido",
+        "newton idő"
+      ]
+    },
+    {
+      "id": "relative_time",
+      "domain": "RELATIVITY",
+      "formula": "proper time vs coordinate time",
+      "variables": [
+        "t",
+        "tau"
+      ],
+      "keywords": [
+        "relative time",
+        "relativisztikus ido",
+        "relativisztikus idő",
+        "ido dilatacio",
+        "idő dilatáció"
+      ]
+    },
+    {
+      "id": "causal_loop",
+      "domain": "INFO",
+      "formula": "closed causal chain in model (feedback cycle)",
+      "variables": [],
+      "keywords": [
+        "kauzalis hurok",
+        "kauzális hurok",
+        "causal loop",
+        "closed causal chain",
+        "retroakcio ciklus",
+        "retroakció ciklus"
+      ]
+    },
+    {
+      "id": "feedback_backpropagation",
+      "domain": "INFO",
+      "formula": "output or state feeds back into input path",
+      "variables": [],
+      "keywords": [
+        "visszacsatolás",
+        "visszacsatolas",
+        "feedback",
+        "backpropagation",
+        "szabalyozo hurok",
+        "szabályozó hurok",
+        "retroaction"
+      ]
+    },
+    {
+      "id": "measurement_distortion",
+      "domain": "QM",
+      "formula": "readout calibration, SPAM, device bias vs ideal Born",
+      "variables": [],
+      "keywords": [
+        "meresi torzitas",
+        "mérési torzítás",
+        "measurement distortion",
+        "kalibracios hiba",
+        "kalibrációs hiba",
+        "sycamore readout bias",
+        "SPAM error",
+        "readout calibration"
+      ]
+    },
+    {
+      "id": "derivative_definition",
+      "domain": "CLASSICAL_MECH",
+      "formula": "f'(x) = lim (f(x+h)-f(x))/h",
+      "variables": [
+        "f",
+        "x"
+      ],
+      "keywords": [
+        "derivalt",
+        "deriválás",
+        "differencialhanyados",
+        "differenciálhányados",
+        "derivative",
+        "sebesseg valtozas",
+        "sebesség változás",
+        "gyorsulas mint derivalt",
+        "gyorsulás mint derivált"
+      ]
+    },
+    {
+      "id": "integral_fundamental",
+      "domain": "CLASSICAL_MECH",
+      "formula": "int_a^b f'(x) dx = f(b) - f(a)",
+      "variables": [
+        "f",
+        "a",
+        "b"
+      ],
+      "keywords": [
+        "integral",
+        "hatarozott integral",
+        "határozott integrál",
+        "fundamental theorem calculus",
+        "terulet gorbe alatt",
+        "terület görbe alatt"
+      ]
+    },
+    {
+      "id": "eigenvalue_equation",
+      "domain": "QM",
+      "formula": "A |psi> = lambda |psi>",
+      "variables": [
+        "A",
+        "psi",
+        "lambda"
+      ],
+      "keywords": [
+        "sajatertek",
+        "sajátérték",
+        "eigenvalue",
+        "eigenvector",
+        "spektrum",
+        "operator sajatvektor",
+        "operátor sajátvektor"
+      ]
+    },
+    {
+      "id": "lagrangian_formalism",
+      "domain": "CLASSICAL_MECH",
+      "formula": "L = T - V, Euler-Lagrange",
+      "variables": [
+        "L",
+        "T",
+        "V"
+      ],
+      "keywords": [
+        "lagrange",
+        "lagrangian",
+        "euler-lagrange",
+        "lagrange formalizmus",
+        "generalized coordinates",
+        "altalanositott koordinata",
+        "általánosított koordináta"
+      ]
+    },
+    {
+      "id": "hamiltonian_formalism",
+      "domain": "QM",
+      "formula": "H = T + V (operator), [q,p]=i*hbar",
+      "variables": [
+        "H",
+        "q",
+        "p"
+      ],
+      "keywords": [
+        "hamilton",
+        "hamiltonian",
+        "hamilton-operator",
+        "kanonikus impulzus",
+        "poisson bracket",
+        "kvantum hamilton"
+      ]
+    },
+    {
+      "id": "work_energy_theorem",
+      "domain": "NEWTON",
+      "formula": "W = Delta K = integral F dot dx",
+      "variables": [
+        "W",
+        "K",
+        "F"
+      ],
+      "keywords": [
+        "munka tetel",
+        "munka tétel",
+        "work energy",
+        "kinetikus energia valtozas",
+        "kinetikus energia változás",
+        "ero ut munka",
+        "erő út munka"
+      ]
+    },
+    {
+      "id": "ideal_gas_law",
+      "domain": "THERMO",
+      "formula": "P V = n R T",
+      "variables": [
+        "P",
+        "V",
+        "n",
+        "T"
+      ],
+      "keywords": [
+        "idealis gaz",
+        "ideális gáz",
+        "allapot egyenlet",
+        "állapot egyenlet",
+        "PV=nRT",
+        "gaz torveny",
+        "gáz törvény"
+      ]
+    },
+    {
+      "id": "coulomb_force",
+      "domain": "MAXWELL",
+      "formula": "F = k q1 q2 / r^2",
+      "variables": [
+        "F",
+        "q",
+        "r"
+      ],
+      "keywords": [
+        "coulomb",
+        "elektrosztatika",
+        "tolto test",
+        "töltött test",
+        "elektromos ero pont",
+        "elektromos erő pont"
+      ]
+    },
+    {
+      "id": "gauss_law_electric",
+      "domain": "MAXWELL",
+      "formula": "oint E dot dA = Q_enc / eps0",
+      "variables": [
+        "E",
+        "Q"
+      ],
+      "keywords": [
+        "gauss torveny",
+        "gauss törvény",
+        "elektromos fluxus",
+        "toltes osszeg",
+        "töltés összeg"
+      ]
+    },
+    {
+      "id": "hun_subject_verb_agreement",
+      "domain": "INFO",
+      "formula": "alany szama egyezik az allitmany ragjaval",
+      "variables": [],
+      "keywords": [
+        "alany egyeztetes",
+        "alany egyeztetés",
+        "szamrag egyezes",
+        "szárag egyezés",
+        "ige ragozas alanyhoz",
+        "ige ragozás alanyhoz",
+        "nyelvtan egyezes",
+        "nyelvtan egyezés",
+        "subject verb agreement hungarian"
+      ]
+    },
+    {
+      "id": "hun_case_system",
+      "domain": "INFO",
+      "formula": "t eset, rag, vonzat",
+      "variables": [],
+      "keywords": [
+        "esetrag",
+        "esetrág",
+        "targyeset",
+        "tárgyeset",
+        "helyhatározó",
+        "ragozas magyar",
+        "ragozás magyar",
+        "vonzo ige",
+        "vonzó ige"
+      ]
+    }
+  ],
+  "logical_negation_pairs": [
+    [
+      "c_regime",
+      "node_impulse"
+    ],
+    [
+      "hun_case_system",
+      "energy_conservation"
+    ],
+    [
+      "ideal_gas_law",
+      "hun_case_system"
+    ],
+    [
+      "causal_loop",
+      "newton_2"
+    ],
+    [
+      "derivative_definition",
+      "quantum_nonlocality"
+    ]
+  ],
+  "causal_edges": [
+    [
+      "newton_2",
+      "node_force"
+    ],
+    [
+      "newton_2",
+      "node_mass"
+    ],
+    [
+      "newton_2",
+      "node_impulse"
+    ],
+    [
+      "newton_3",
+      "node_force"
+    ],
+    [
+      "newton_3",
+      "node_impulse"
+    ],
+    [
+      "maxwell_vacuum",
+      "c_regime"
+    ],
+    [
+      "transitivity_impl",
+      "non_contradiction"
+    ],
+    [
+      "quantum_data_stream",
+      "shannon_entropy_max_q"
+    ],
+    [
+      "shannon_entropy_max_q",
+      "born_rule_probability"
+    ],
+    [
+      "born_rule_probability",
+      "quantum_mechanics_axiom"
+    ],
+    [
+      "quantum_mechanics_axiom",
+      "schrodinger"
+    ],
+    [
+      "general_relativity_spacetime",
+      "local_realism"
+    ],
+    [
+      "quantum_indeterminism",
+      "quantum_nonlocality"
+    ],
+    [
+      "quantum_data_stream",
+      "measurement_distortion"
+    ],
+    [
+      "measurement_distortion",
+      "born_rule_probability"
+    ],
+    [
+      "causal_loop",
+      "feedback_backpropagation"
+    ],
+    [
+      "feedback_backpropagation",
+      "quantum_data_stream"
+    ],
+    [
+      "feedback_backpropagation",
+      "measurement_distortion"
+    ],
+    [
+      "derivative_definition",
+      "newton_2"
+    ],
+    [
+      "integral_fundamental",
+      "work_energy_theorem"
+    ],
+    [
+      "work_energy_theorem",
+      "energy_conservation"
+    ],
+    [
+      "eigenvalue_equation",
+      "schrodinger"
+    ],
+    [
+      "eigenvalue_equation",
+      "born_rule_probability"
+    ],
+    [
+      "lagrangian_formalism",
+      "newton_2"
+    ],
+    [
+      "hamiltonian_formalism",
+      "schrodinger"
+    ],
+    [
+      "coulomb_force",
+      "maxwell_vacuum"
+    ],
+    [
+      "gauss_law_electric",
+      "coulomb_force"
+    ]
+  ],
+  "forbidden_edges": [
+    [
+      "lagrangian_formalism",
+      "momentum_conservation"
+    ],
+    [
+      "non_contradiction",
+      "hun_case_system"
+    ]
+  ],
+  "schema_version": 1
+}
