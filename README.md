@@ -1,14 +1,54 @@
-# Axiomatikus következtető mag (AIE) — áttekintés
+# Axiomatikus következtető motor (AIE)
+
+> **Egy hipotézis, amit a saját kontroll-kísérlete kettéhasított.** Az eredeti egy-mechanizmus tézis ("a kauzális struktúra és az immunrendszer együtt építi a topológiai mélységet") a 30-seedes 4-karú strict-immune kísérletben **két független, statisztikailag szignifikáns mechanizmusra** vált szét.
+
+![Kettő-mechanizmus kép — kontroll-kísérlet eredménye](experiments/linkedin_figure.png)
+
+## A két megerősített mechanizmus
+
+| Mechanizmus | Hatás | Statisztika |
+|---|---|---|
+| **TOPO ← strukturáltság** | Strukturált kauzális regiszteren a topológiai mélység ~50%-kal magasabb mint random gráfon | Mann-Whitney U, **p = 1.1·10⁻¹¹** (n=30 seed) |
+| **Q ← immunrendszer** | Az immunrendszer az élsűrűséget szabályozza, ~17% csökkenés a strikt karon | Mann-Whitney U, **p = 1.2·10⁻¹¹**, replikálva 3 regiszter-méreten |
+| **TOPO ⊥ immunrendszer** | Az immunrendszer **nem** befolyásolja a topológiai mélységet | p > 0.3 mindenhol |
+
+A két mechanizmus **független** és **különböző gráf-tulajdonságot ír**. Ez gazdagabb és pontosabb tézis, mint az eredeti egy-mechanizmus kép volt.
+
+**Mire való ez a repó:**
+- **Reprodukálható kísérleti keret** AIE-re: kontroll-regiszter generátorok, batch runner (30 seed, párhuzamos workerek), Mann-Whitney U + Bonferroni, TOPO dinamika, falszifikációs assertion
+- **Pre-regisztrációs protokoll** — a hipotézisek küszöbei a futás ELŐTT rögzítve ([EXPERIMENT_IMMUNE_DENSITY.md](EXPERIMENT_IMMUNE_DENSITY.md))
+- **40 unit teszt** a kernel és kísérleti infrastruktúra mellett
+
+## Dokumentumok
+
+- **[THEORY.md](THEORY.md)** — átfogalmazott tézis: két szétválasztott mechanizmus
+- **[EXPERIMENT_IMMUNE_DENSITY.md](EXPERIMENT_IMMUNE_DENSITY.md)** — a kontroll-kísérlet pre-regisztrációja, eredményei, és verdict-je
+- **[experiments/README.md](experiments/README.md)** — hogyan futtasd újra a kísérleteket (~10-15 perc compute)
+- **[EXPERIMENT_TIMELESS.md](EXPERIMENT_TIMELESS.md)** — történeti: az "időtlen univerzum" eredeti kísérleti elgondolás
+- **[ROADMAP.md](ROADMAP.md)** — fejlesztési fázisok
+
+## Gyors reprodukció
+
+```bash
+pip install -r requirements.txt
+python -m unittest discover tests           # 40 unit teszt
+bash experiments/run_strict_all.sh          # 8 kar × 30 seed × 10000 lépés (~10 perc)
+python -m experiments.aggregate --manifest experiments/runs/timeless_strict/manifest.json
+python -m experiments.mann_whitney \
+    --timeless-manifest experiments/runs/timeless_strict/manifest.json \
+    --control-manifest experiments/runs/random_strict/manifest.json \
+    --metric topo --direction greater
+```
+
+---
+
+## Technikai dokumentáció — AIE engine
+
+A továbbiakban a kernel és a chat-csatorna technikai leírása.
 
 Ez a mappa egy **irányított axióma-gráfot** (NumPy mátrix) tart karban, rajta **Q-sűrűséget** és **N\*** jellegű metrikákat számol, és opcionálisan **policy** (YAML) alatt **daemon / felfedező** üzemmódot futtat. A cél: strukturált „logikai hálózat” + mérhető feszültség (klasszikus vs. kvantum stb.), nem egy teljes LLM.
 
 A dokumentációban és a `THEORY.md`-ben az **„idő” / időnyíl** kifejezés **kauzális irányítás és topológiai mélység** metaforája (irányított láncok, aszimmetria, immun) — **nem** beépített naptári óra; a `sleep` csak ütemezés.
-
-## Kapcsolódó leírás
-
-- **[THEORY.md](THEORY.md)** — tézis: a topológiai sorrend / immunrendszer mint emergens „idő nyíl” metaforája; mi bizonyítható a szimulációban vs. mi nem.
-- **[EXPERIMENT_TIMELESS.md](EXPERIMENT_TIMELESS.md)** — az „idő” gráf-metaforája (kauzális mélység, Q, H₀), és az **időtlen univerzum** kísérlet: `axioms_registry_timeless.json`, ingestor, mit figyeljünk.
-- **[ROADMAP.md](ROADMAP.md)** — **útiter**: matek/fizika + válasz + hipotézis + szabályértés (fázisok sorban; mit építünk következőnek).
 
 ## Fő fájlok
 
