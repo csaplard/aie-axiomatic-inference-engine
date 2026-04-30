@@ -1,0 +1,320 @@
+{
+  "version": "dense-15n-10f-10neg-far-seed1+priority-thesis",
+  "schema_version": 1,
+  "description": "Sűrű szintetikus regiszter: 15 csúcs, 19 causal él, 10 forbidden, 10 negáció (adjacency: far). | priority_weight: thesis.",
+  "nodes": [
+    {
+      "id": "d_0",
+      "domain": "LOGIC",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_0"
+      ],
+      "priority_weight": 0.85
+    },
+    {
+      "id": "d_1",
+      "domain": "QM",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_1"
+      ],
+      "priority_weight": 0.3
+    },
+    {
+      "id": "d_2",
+      "domain": "INFO",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_2"
+      ],
+      "priority_weight": 0.2
+    },
+    {
+      "id": "d_3",
+      "domain": "Newtoni-mechanika",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_3"
+      ],
+      "priority_weight": 0.75
+    },
+    {
+      "id": "d_4",
+      "domain": "LOGIC",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_4"
+      ],
+      "priority_weight": 0.85
+    },
+    {
+      "id": "d_5",
+      "domain": "QM",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_5"
+      ],
+      "priority_weight": 0.3
+    },
+    {
+      "id": "d_6",
+      "domain": "INFO",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_6"
+      ],
+      "priority_weight": 0.2
+    },
+    {
+      "id": "d_7",
+      "domain": "Newtoni-mechanika",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_7"
+      ],
+      "priority_weight": 0.75
+    },
+    {
+      "id": "d_8",
+      "domain": "LOGIC",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_8"
+      ],
+      "priority_weight": 0.85
+    },
+    {
+      "id": "d_9",
+      "domain": "QM",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_9"
+      ],
+      "priority_weight": 0.3
+    },
+    {
+      "id": "d_10",
+      "domain": "INFO",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_10"
+      ],
+      "priority_weight": 0.2
+    },
+    {
+      "id": "d_11",
+      "domain": "Newtoni-mechanika",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_11"
+      ],
+      "priority_weight": 0.75
+    },
+    {
+      "id": "d_12",
+      "domain": "LOGIC",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_12"
+      ],
+      "priority_weight": 0.85
+    },
+    {
+      "id": "d_13",
+      "domain": "QM",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_13"
+      ],
+      "priority_weight": 0.3
+    },
+    {
+      "id": "d_14",
+      "domain": "INFO",
+      "formula": "",
+      "variables": [],
+      "keywords": [
+        "d_14"
+      ],
+      "priority_weight": 0.2
+    }
+  ],
+  "logical_negation_pairs": [
+    [
+      "d_0",
+      "d_8"
+    ],
+    [
+      "d_3",
+      "d_12"
+    ],
+    [
+      "d_2",
+      "d_9"
+    ],
+    [
+      "d_2",
+      "d_12"
+    ],
+    [
+      "d_7",
+      "d_14"
+    ],
+    [
+      "d_4",
+      "d_12"
+    ],
+    [
+      "d_0",
+      "d_9"
+    ],
+    [
+      "d_0",
+      "d_11"
+    ],
+    [
+      "d_2",
+      "d_10"
+    ],
+    [
+      "d_1",
+      "d_12"
+    ]
+  ],
+  "causal_edges": [
+    [
+      "d_0",
+      "d_1"
+    ],
+    [
+      "d_1",
+      "d_2"
+    ],
+    [
+      "d_2",
+      "d_3"
+    ],
+    [
+      "d_3",
+      "d_4"
+    ],
+    [
+      "d_4",
+      "d_5"
+    ],
+    [
+      "d_5",
+      "d_6"
+    ],
+    [
+      "d_6",
+      "d_7"
+    ],
+    [
+      "d_7",
+      "d_8"
+    ],
+    [
+      "d_8",
+      "d_9"
+    ],
+    [
+      "d_9",
+      "d_10"
+    ],
+    [
+      "d_10",
+      "d_11"
+    ],
+    [
+      "d_11",
+      "d_12"
+    ],
+    [
+      "d_12",
+      "d_13"
+    ],
+    [
+      "d_13",
+      "d_14"
+    ],
+    [
+      "d_0",
+      "d_2"
+    ],
+    [
+      "d_3",
+      "d_5"
+    ],
+    [
+      "d_6",
+      "d_8"
+    ],
+    [
+      "d_9",
+      "d_11"
+    ],
+    [
+      "d_12",
+      "d_14"
+    ]
+  ],
+  "forbidden_edges": [
+    [
+      "d_14",
+      "d_6"
+    ],
+    [
+      "d_11",
+      "d_3"
+    ],
+    [
+      "d_9",
+      "d_0"
+    ],
+    [
+      "d_12",
+      "d_5"
+    ],
+    [
+      "d_13",
+      "d_2"
+    ],
+    [
+      "d_12",
+      "d_4"
+    ],
+    [
+      "d_12",
+      "d_3"
+    ],
+    [
+      "d_11",
+      "d_2"
+    ],
+    [
+      "d_13",
+      "d_6"
+    ],
+    [
+      "d_10",
+      "d_1"
+    ]
+  ],
+  "n_nodes_override": 15
+}

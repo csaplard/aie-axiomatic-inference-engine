@@ -24,6 +24,7 @@ A két mechanizmus **független** és **különböző gráf-tulajdonságot ír**
 - **[THEORY.md](THEORY.md)** — átfogalmazott tézis: két szétválasztott mechanizmus
 - **[EXPERIMENT_IMMUNE_DENSITY.md](EXPERIMENT_IMMUNE_DENSITY.md)** — a kontroll-kísérlet pre-regisztrációja, eredményei, és verdict-je
 - **[EXPERIMENT_PRIORITY.md](EXPERIMENT_PRIORITY.md)** — C kísérlet: priority_weight mechanizmus tesztje (cáfolt elsődleges hipotézis + nyitott post-hoc megfigyelés)
+- **[EXPERIMENT_D.md](EXPERIMENT_D.md)** — D kísérlet: 2D dizájn (priority × adjacency) confound-free setupon — új saturációs confound felfedezve, a 4. mechanizmus sorsa továbbra is nyitott
 - **[experiments/README.md](experiments/README.md)** — hogyan futtasd újra a kísérleteket (~10-15 perc compute)
 - **[EXPERIMENT_TIMELESS.md](EXPERIMENT_TIMELESS.md)** — történeti: az "időtlen univerzum" eredeti kísérleti elgondolás
 - **[ROADMAP.md](ROADMAP.md)** — fejlesztési fázisok
@@ -32,7 +33,9 @@ A két mechanizmus **független** és **különböző gráf-tulajdonságot ír**
 
 A C kísérletben (priority_weight mechanizmus) a pre-regisztrált elsődleges hipotézis **cáfolódott** (priority NEM koncentrálja a TOPO-mélyülést a magas-priority csúcsokra, p=0.97 a vártnak ellentétes irányban). A post-hoc analízis viszont egy **új mintázatra** mutatott: a priority-eloszlás a heurisztikán keresztül **drasztikusan átrendezi** az immunrendszer aktivitását (RRR a `priority_thesis` 0.31-tól a `priority_inverted` 0.98-ig terjed, Mann-Whitney p = 6·10⁻⁹).
 
-Ez egy **post-hoc megfigyelés**, **nem megerősített mechanizmus**. Két versengő magyarázat él (domain-koherencia vs chain-adjacency), és pre-regisztrált replikációs kísérlet (D) szükséges a megerősítéséhez. Lásd: [EXPERIMENT_PRIORITY.md](EXPERIMENT_PRIORITY.md) utórész.
+Ez egy **post-hoc megfigyelés**, **nem megerősített mechanizmus**. A D kísérlet (2D dizájn priority × adjacency, confound-free `n_nodes=15` setupon) **nem tudta értékelni** — egy új confoundba ütközött (RRR-saturáció a kis gráfon, minden karon RRR ≈ 1.0). Tehát a 4. mechanizmus sorsa továbbra is **nyitott**: nem cáfolt, nem megerősített. Az E kísérlet (közbülső paraméter-tartomány: n_nodes ≈ 30–40, csökkentett immun-sűrűség) érlelődik.
+
+Lásd részletesen: [EXPERIMENT_PRIORITY.md](EXPERIMENT_PRIORITY.md) (C kísérlet) és [EXPERIMENT_D.md](EXPERIMENT_D.md) (D kísérlet).
 
 ## Gyors reprodukció
 

@@ -17,7 +17,7 @@ import argparse
 import json
 import random
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 def _node(idx: int, domain: str) -> Dict[str, Any]:
@@ -124,6 +124,8 @@ def dense_synthetic_registry(
     n_forbidden: int = 10,
     n_negation: int = 10,
     seed: int = 1,
+    adjacency_mode: str = "near",
+    n_nodes_override: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Kicsi, sűrű, szintetikus tézis-regiszter B kísérlethez:
@@ -158,11 +160,28 @@ def dense_synthetic_registry(
 
     causal_set = {tuple(p) for p in causal}
 
-    # Forbidden: visszafelé élek, i+k -> i, k>=2 — mindenképp ellentmondanának a gerincnek
+    # Forbidden élek távolság-tartománya az `adjacency_mode` szerint.
+    # "near": j-i kicsi (2-4), a kauzális gerinc mellett — chain-adjacency forrás.
+    # "far":  j-i nagy (>= n_nodes/2) — kontroll arm, hogy az immun NE érjen
+    #         konszekutív próbákhoz.
+    # "uniform": minden 2 <= j-i kombináció egyforma.
+    if adjacency_mode == "near":
+        d_min, d_max = 2, max(2, min(4, n_nodes - 1))
+    elif adjacency_mode == "far":
+        d_min = max(2, n_nodes // 2)
+        d_max = n_nodes - 1
+    elif adjacency_mode == "uniform":
+        d_min, d_max = 2, n_nodes - 1
+    else:
+        raise ValueError(f"Ismeretlen adjacency_mode: {adjacency_mode}")
+
     forbidden: List[List[str]] = []
     used_forbidden: set = set()
+    # forbidden: visszafelé élek (j+k -> j formában), k a [d_min, d_max] tartományban
     candidates: List[Tuple[int, int]] = [
-        (j, i) for i in range(n_nodes) for j in range(i + 2, n_nodes)
+        (j, i)
+        for i in range(n_nodes)
+        for j in range(i + d_min, min(i + d_max + 1, n_nodes))
     ]
     rng.shuffle(candidates)
     for src, dst in candidates:
@@ -174,13 +193,14 @@ def dense_synthetic_registry(
         forbidden.append(list(pair))
         used_forbidden.add(pair)
 
-    # Negation pairs: távoli csúcsok (legalább 3 lépés távolságra a gerincben)
+    # Negation pairs: ugyanaz az adjacency_mode szerinti távolság-tartomány
     negation: List[List[str]] = []
     used_neg: set = set()
+    neg_d_min = max(d_min, 3)  # negation legalább 3 (eredeti viselkedés)
     neg_candidates: List[Tuple[int, int]] = [
         (i, j)
         for i in range(n_nodes)
-        for j in range(i + 3, n_nodes)
+        for j in range(i + neg_d_min, min(i + d_max + 1, n_nodes))
     ]
     rng.shuffle(neg_candidates)
     for a, b in neg_candidates:
@@ -192,18 +212,22 @@ def dense_synthetic_registry(
         negation.append([f"d_{a}", f"d_{b}"])
         used_neg.add(key)
 
-    return {
-        "version": f"dense-thesis-{n_nodes}n-{n_forbidden}f-{n_negation}neg-seed{seed}",
+    out: Dict[str, Any] = {
+        "version": f"dense-{n_nodes}n-{n_forbidden}f-{n_negation}neg-{adjacency_mode}-seed{seed}",
         "schema_version": 1,
         "description": (
-            f"Sűrű szintetikus tézis-regiszter B kísérlethez: {n_nodes} csúcs, "
-            f"{len(causal)} causal él, {n_forbidden} forbidden, {n_negation} negáció."
+            f"Sűrű szintetikus regiszter: {n_nodes} csúcs, "
+            f"{len(causal)} causal él, {len(forbidden)} forbidden, "
+            f"{len(negation)} negáció (adjacency: {adjacency_mode})."
         ),
         "nodes": nodes,
         "logical_negation_pairs": negation,
         "causal_edges": causal,
         "forbidden_edges": forbidden,
     }
+    if n_nodes_override is not None:
+        out["n_nodes_override"] = int(n_nodes_override)
+    return out
 
 
 def no_immune_registry(source_path: Path) -> Dict[str, Any]:
@@ -338,6 +362,14 @@ def main() -> None:
     p_dense.add_argument("--n-forbidden", type=int, default=10)
     p_dense.add_argument("--n-negation", type=int, default=10)
     p_dense.add_argument("--seed", type=int, default=1)
+    p_dense.add_argument(
+        "--adjacency-mode", choices=["near", "far", "uniform"], default="near",
+        help="forbidden_edges/negation_pairs távolság-tartománya: near (2-4), far (n/2 - n-1), uniform (2 - n-1).",
+    )
+    p_dense.add_argument(
+        "--n-nodes-override", type=int, default=None,
+        help="Engine n_nodes mérete (D kísérlet: registry_size, hogy ne legyen padding-confound).",
+    )
     p_dense.add_argument("--out", type=Path, required=True)
 
     p_pri = sub.add_parser(
@@ -375,6 +407,8 @@ def main() -> None:
             n_forbidden=args.n_forbidden,
             n_negation=args.n_negation,
             seed=args.seed,
+            adjacency_mode=args.adjacency_mode,
+            n_nodes_override=args.n_nodes_override,
         )
     elif args.cmd == "with_priority":
         data = add_priority_to_dense(args.source, args.mode, args.seed)

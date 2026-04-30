@@ -39,6 +39,13 @@ class AxiomRegistry:
         with path.open(encoding="utf-8") as f:
             data = json.load(f)
         self.version: str = data.get("version", "")
+        # Opcionális: ha a regiszter explicit megadja az engine n_nodes méretét.
+        # Ha None, a kernel a saját default-jával dolgozik (max(default, n_axioms)).
+        nn = data.get("n_nodes_override")
+        try:
+            self.n_nodes_override: Optional[int] = int(nn) if nn is not None else None
+        except (TypeError, ValueError):
+            self.n_nodes_override = None
         self.nodes: List[AxiomSpec] = []
         id_to_index: Dict[str, int] = {}
         for idx, raw in enumerate(data["nodes"]):

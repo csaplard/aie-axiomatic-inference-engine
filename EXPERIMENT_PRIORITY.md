@@ -154,6 +154,8 @@ A vizsgálat módja: a futás után a végső gráfon a high vs low partícióba
 
 **Pre-regisztrált döntésfa szerint: TÉZIS CÁFOLT** — a priority NEM koncentrálja a TOPO-mélyülést a magas-prioritású csúcsokra. Sőt, fordítva: a `priority_thesis`-en az alacsony-priority partíció **mélyebb**, mint a magas.
 
+> **⚠️ Verdict-pontosítás (a függelékbeli diagnosztika alapján):** A H1 cáfolata technikailag valid (a pre-regisztrált küszöb nem teljesült), de a kísérleten belül **a tényleges priority-hatás nem mérhető tisztán**. A motor `n_nodes` alapértelmezése 64, miközben a regiszter csak 15 csúcsos — 49 padding csúcs alapértelmezett priority=0.5 értékkel **dominálja a kvantilis-alapú TOPO partícionálást**. A H1 verdict tehát nem azt mondja, hogy a priority **nem koncentrál**, hanem azt, hogy a kísérleti setupon **nem mérhető**, koncentrál-e. A confound részleteit lásd a függelékben; a D kísérlet ennek figyelembevételével lett tervezve.
+
 ## Mit mond ez a kísérlet a priority mechanizmusról?
 
 A pre-regisztrált verdict önmagában nem teljes. Az adat egy **gazdagabb képet** rajzol:

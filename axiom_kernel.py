@@ -224,7 +224,12 @@ class AxiomaticInferenceEngine:
         self._load_registry()
         self._build_negation_map()
         if self._registry is not None:
-            self.n_nodes = max(self.n_nodes, self._registry.n_axioms)
+            override = getattr(self._registry, "n_nodes_override", None)
+            if override is not None and override > 0:
+                # A regiszter explicit méretet ír elő (pl. confound-free kísérlet)
+                self.n_nodes = max(int(override), self._registry.n_axioms)
+            else:
+                self.n_nodes = max(self.n_nodes, self._registry.n_axioms)
         self.knowledge_matrix = np.eye(self.n_nodes, dtype=np.float64)
         self._seed_hamilton_ring = True
         self._think_step_counter = 0
