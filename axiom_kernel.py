@@ -782,13 +782,28 @@ class AxiomaticInferenceEngine:
         )
 
     def _would_contradict_edge(self, A: np.ndarray, i: int, j: int) -> bool:
-        """Ellentmondás: i->j nem vehető fel, ha már van i->...->neg(j) (A -> B es A -> neg B)."""
+        """Ellentmondás: i->j nem vehető fel, ha már van i->...->neg(j) (A -> B es A -> neg B).
+
+        Hipnagóg módban a negation_threshold szabályozza valószínűségileg:
+        threshold >= 1.0: kemény ellenőrzés (default), 0.0: kikapcsolva.
+        Az AWAKE/COOLDOWN módban mindig 1.0 (kemény)."""
         if self._policy is not None and self._policy.ignore_negation_contradictions:
             return False
         neg_j = self._negation.get(j)
-        if neg_j is not None and self._has_path_unlocked(A, i, neg_j):
-            return True
-        return False
+        if neg_j is None:
+            return False
+        if not self._has_path_unlocked(A, i, neg_j):
+            return False
+        # Talált contradiction: alkalmazzuk a hipnagóg relaxációt, ha aktív
+        if self._hypnagogic_state is not None:
+            relax = self._hypnagogic_state.current_relaxation()
+            t = float(relax.get("negation_threshold", 1.0))
+            if t >= 1.0:
+                return True
+            if t <= 0.0:
+                return False
+            return bool(np.random.random() < t)
+        return True
 
     def get_source_reliability(self, source_id: str) -> float:
         return self._source_trust.get(source_id, 1.0)

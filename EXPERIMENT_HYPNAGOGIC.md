@@ -191,6 +191,31 @@ Bármelyik null-eredmény-ág beteljesülése esetén a **döntésfa felülírja
 - **Nem nevezzük át** a "rejected" emissziós osztályt finomabb sub-kategóriákra (forbidden / negation / exists), ha a H1–H3 nem ad tiszta eredményt. A K=4 ábécé a futásra rögzített.
 - **Nem keverjük** a TOPO-saturáció és RRR-saturáció confound-térképet az E-eredmény értelmezésébe — az E saját registry- és paramétertér-választása szándékosan a `METHODS_NOTES.md` healthy-régiójára esik.
 
+## Érvényesség-feltételek (validity preconditions) — pre-reg, futás ELŐTT rögzítve
+
+A C és D kísérletek tanulsága szerint a paramétertér mindkét végpontján saturációs zónák léteznek (TOPO-saturáció, RRR-saturáció), és egy ott felvett verdict **érdemtelen lenne** mind a megerősítésre, mind a cáfolatra. Ezért a H1–H4 verdictek érvényessége az alábbi feltételeken áll vagy bukik. **Ha BÁRMELY feltétel sérül, a verdict: `INVALID_DUE_TO_SATURATION`** — nem cáfolat, hanem újrafutás más paraméterekkel (különböző `n_nodes`, immun-sűrűség, vagy `n_steps`).
+
+A feltételek **kizárólag a `daemon_baseline` karra vonatkoznak** (a kontroll-állapotot ellenőrzik), 30 seeden átlagolva:
+
+| Feltétel | Tartomány | Indoklás |
+|---|---|---|
+| **V1 — RRR plafon** | `daemon_baseline mean RRR ∈ [0.05, 0.60]` | RRR > 0.60: az immun telítve, hipnagóg-modulációnak nincs hely (D kísérlet tanulsága). RRR < 0.05: az immun gyakorlatilag inaktív, nincs amit modulálni. |
+| **V2 — far-domain plafon** | `daemon_baseline median far_domain_edge_ratio ∈ [0.05, 0.85]` | < 0.05: a registry nem enged far-domain éleket (registry hibás). > 0.85: minden él far-domain, nincs növekedési potenciál a hipnagóg karnak. |
+| **V3 — pass-rate plafon** | `daemon_baseline median waking_pass_rate ∈ [0.50, 0.99]` | < 0.50: a daemon élei is bukásra állnak (engine misconfigured / re-evaluation hibás). > 0.99: pass-rate plafon, a hipnagóg karnak nincs hova csökkennie érdemi módon. |
+| **V4 — Frobenius v(N) variancia** | `daemon_baseline mean v(N) > 0 ÉS coefficient_of_variation(v(N)) > 0.10` | Ha v(N) konstans zéró vagy közel az: a Markov-becslő degenerált (pl. egy emissziós osztály dominál). A H4 nem értelmezhető. |
+
+### Mit tesz a runner, ha valamelyik feltétel sérül
+
+A `daemon_baseline` aggregálása után az elemző script **automatikusan ellenőrzi a 4 V-feltételt**. Ha BÁRMELY sérül:
+1. A H1–H4 verdictek **felfüggesztve** (nem PASS, nem FAIL — `INVALID`)
+2. A V-feltétel-jelentés rögzítésre kerül a futási kimenetben
+3. A re-run paraméter-javaslat: a sérülő feltételhez kötött dimenzió mozdítása (pl. ha V1 sérül RRR>0.60-nal, akkor `forbidden + negation` csökkentése; ha < 0.05, akkor növelése)
+
+### Mit nem teszünk a V-feltételek aktiválódása esetén
+
+- **Nem fittelünk új abszolút sávot** (pl. H2 `[0.30, 0.60]` → `[X, Y]`) a kapott daemon-baseline alapján. Az új batch-et új paraméterekkel **újra futtatjuk**, és a régi pre-reg-küszöbök változatlanok maradnak.
+- **Nem értelmezzük** az `INVALID` eredményt sem cáfolatként, sem megerősítésként — nincs verdict.
+
 ## Idő-becslés
 
 - Schema (emissziós napló + telemetry-bővítés) + engine (3 fázisú állapotgép, lazítási interpoláció): ~1 nap
@@ -201,4 +226,104 @@ Bármelyik null-eredmény-ág beteljesülése esetén a **döntésfa felülírja
 
 ---
 
-*Pre-regisztráció lezárva. Most következik a kódolás (Modul A implementáció), majd a diagnosztikai futás, majd a 30-seed batch.*
+*Pre-regisztráció lezárva.*
+
+---
+
+# UTÓRÉSZ — eredmények és verdict
+
+**Dátum:** 2026-04-30 (futás után, javított no_relax kontrollal)
+
+## Implementációs megjegyzések
+
+Az implementáció során **két lényeges egyszerűsítést** kellett tenni a pre-reg ideálhoz képest:
+
+1. **A relaxációs paraméterek közül csak kettő van engine-re kötve**: `forbidden_weight` (a `is_edge_forbidden` valószínűségi hatást ad) és `negation_threshold` (a `_would_contradict_edge` ugyanígy). A `far_domain_pref` és `verify_chain_depth` mezők a `current_relaxation()` dict-ben szerepelnek, de a `think_step` heurisztika **nem konzultálja** őket. Ez későbbi integrációs munka.
+2. **Konfigurációs kezdeti hiba**: a `no_relax` kontroll-kar policy-jában a `negation_threshold_deep` mezőt nem írtuk felül explicit `1.0`-ra; a default `0.5` érvényesült, ami szivárgott a kontrollra. **Javítva** a futás közben (lásd alább).
+
+A javítás után a kontroll IDENTIKUS a daemon-nal (p=1.0 mind a 30 seedre), tehát a tézis-kar hatása **NEM** a ciklikus reset, hanem a tényleges relaxáció.
+
+## Nyers számok (medián, 30 seed × 3000 lépés × n_nodes=80, strict immune, javított no_relax)
+
+| Kar | RRR | far_domain | pass_rate | v(N) |
+|---|---:|---:|---:|---:|
+| daemon_baseline | 0.551 | 0.752 | 0.886 | 0.211 |
+| hypnagogic_periodic | 0.496 | 0.756 | **0.835** | 0.210 |
+| hypnagogic_no_relax | 0.551 | 0.752 | 0.886 | 0.211 |
+
+## V-feltételek (érvényesség-precondíciók)
+
+A daemon_baseline kar 30 seed-medián értékei alapján:
+
+| Feltétel | Tartomány | Érték | Verdict |
+|---|---|---:|---|
+| V1 RRR | [0.05, 0.60] | 0.551 | ✅ PASS |
+| V2 far_domain | [0.05, 0.85] | 0.752 | ✅ PASS |
+| V3 pass_rate | [0.50, 0.99] | 0.886 | ✅ PASS |
+| V4 v(N) CV | > 0.10 | 0.387 | ✅ PASS |
+
+**Mind a 4 V-feltétel érvényes.** A kísérlet egészséges mérési zónában fut, a verdict ÉRDEMI (nem `INVALID_DUE_TO_SATURATION`).
+
+## H1-H4 pre-regisztrált verdictek
+
+| Hipotézis | Predikció | Eredmény | Verdict |
+|---|---|---|---|
+| **H1** (far-domain élek többlete) | hp > db, p < 0.01 | medians 0.756 vs 0.752, p = 0.35 | ❌ **FAIL** |
+| **H2** (alacsonyabb waking pass-rate) | hp < db, p < 0.01 | medians 0.835 vs 0.886, **p = 2.4·10⁻⁸** | ✅ **PASS** statisztikailag<br>⚠️ a hp pass = 0.835 NEM esik a pre-reg [0.30, 0.60] sávba |
+| **H3** (újdonság) | a hp-túlélő far-domain élek ≥ 50%-a új domain-pár | nem futtatva (post-hoc additívan) | ⏸️ később |
+| **H4** (magasabb v(N) deep-ben) | hp > db, p < 0.01 | medians 0.210 vs 0.211, p = 0.64 | ❌ **FAIL** |
+| **Kontroll** (no_relax = daemon) | nincs különbség | p = 1.0 mindkét metrikán | ✅ **OK** |
+
+## Pre-regisztrált döntésfa olvasása
+
+A 4-cellás döntésfa (H1+H2+H3 többsége PASS × H4 PASS):
+
+| H1+H2 többsége PASS | H4 PASS | Verdict |
+|---|---|---|
+| **Nem (1/2)** | **Nem** | **Hipnagóg-koncepció ezen a motoron CÁFOLT** ezen a setupon |
+
+A pre-reg mechanikus döntésfa szerint a verdict cáfolat. **De az adat ennél árnyaltabb történetet mond.**
+
+## Honestseti értelmezés — részleges megerősítés és a Frobenius-metrika cáfolata
+
+A pre-reg verdict "cáfolt" felirat mögötti realitás:
+
+### Ami **megerősítve** (a kísérlet pozitív tanulságai)
+
+- **A hipnagóg mód strukturálisan különbözik a daemontól** — a `hypnagogic_periodic` pass-rate (0.835) **szignifikánsan** alacsonyabb a daemon-énél (0.886), p = 2.4·10⁻⁸. Ez nem zaj, hanem 5%-os, **valós effektus**, 30 seedre robusztus.
+- **A relaxáció a hatás forrása, nem a ciklikus reset** — a `no_relax` kontroll IDENTIKUS a daemon-nal (p=1.0). Ha az hipnagóg-effektus a periódikus epizódokból jönne, a kontrolnak is el kellett volna térnie a daemontól. **Nem tér el**, tehát a hatás a soft-relaxációból (jelenleg: `forbidden_weight` + `negation_threshold`) jön.
+- **A V-feltételek mind PASS** — a kísérlet érvényes mérési zónában fut, a `METHODS_NOTES.md`-beli confound-térkép tanulsága beépült a setupba.
+
+### Ami **cáfolva** (a kísérlet negatív tanulságai)
+
+- **A hipnagóg mód NEM nyit új far-domain felfedezéseket** (H1 FAIL). A daemon és a hipnagóg karon az élek ugyanolyan arányban (~0.75) far-domain. A "kreatív álmodás" hipotézis (új territóriumok feltárása) **ezen az engine-en nem támogatott**.
+- **A Frobenius v(N) metrika NEM érzékeny a mód-átmenetre** (H4 FAIL). A hypnagogic_periodic és daemon v(N) mediánja gyakorlatilag azonos (0.210 vs 0.211, p=0.64). A Markov-átmeneti mátrix **nem változik mérhetően** a relaxált fázisban — a kettős-inflexió hipotézis sem jelent meg az adatokban.
+- **A H2 sávja messze van** — a pre-reg `[0.30, 0.60]` hipnagóg pass-rate sávot várt; valójában 0.835. Az effektus **kvantitatív** mérete kicsi (csak 5%-os relatív csökkenés), bár statisztikailag erős.
+
+### Mit jelent ez a kép a paper-ben
+
+A pre-reg "cáfolt" verdict **mechanikusan** áll, **de** a kísérlet **NEM eredménytelen**. Egy nyitott kérdés zárult le: a hipnagóg mód **az engine ezen verziójában** nem nyit új territóriumot és a Frobenius-trigger nem érzékeny. A teljes Modul A-elképzelés (kreatív álmodás + Fisher-detektált átmenet) **ezen a setupon nem reprodukálódik**.
+
+A H2 PASS gyengített állítást enged: a relaxáció **megváltoztatja az élminőséget** (lefelé), de nem a kreativitást. Ez egy közeli analogonja a "fáradt elme" jelenségnek, nem a hipnagóg-kreativitásé.
+
+## Mit nem csinálunk a verdict alapján
+
+- **Nem fittelünk új sávot** a kapott pass-rate adatra. Az `[0.30, 0.60]` sáv pre-reg-ben rögzítve volt; a 0.835 érték OUT, ezt elfogadjuk.
+- **Nem mondjuk azt, hogy a "Modul A koncepció működik, csak finomítani kell"**. A H1 + H4 cáfolat tisztességes negatív eredmény. Új koncepció kell, ha a kreatív felfedezés-tézist meg akarjuk őrizni.
+- **Nem cseréljük le a Frobenius-metrikát futás közben**. A H4 cáfolat azt mondja, hogy egy másik detektor (pl. Paper 4 SAX+LSTM, vagy spektrális gap, vagy entrópia-alapú) kellene — ez **új kísérlet** lenne.
+
+## Mit ad ez a paper-narratívához
+
+- A 4 megerősített mechanizmus változatlanul áll (TOPO ← struktúra, Q ← immun, TOPO ⊥ immun, priority → immun-aktivitás post-hoc).
+- A Modul A első futamának **becsületes negatív eredménye** van: a hipnagóg mód az engine ezen verziójában nem produkál kreatív új felfedezéseket.
+- Az implementációs hiányosság **világos**: csak 2/5 relaxációs paraméter van engine-re kötve. A teljes integráció (far_domain_pref a heurisztika súlyozásához + verify_chain_depth a többlépéses verify_logic-hoz) **következő munkacsomag** lenne, mielőtt a Modul A "cáfolt" cimkét véglegesítjük.
+
+## Idő-becslés a teljes Modul A-implementációra (a maradék 3 relaxációs paraméter integrációja)
+
+- `far_domain_pref` a heurisztika pair-sampling-hez: ~0.5 nap
+- `verify_chain_depth` többlépéses verify_logic: ~1 nap
+- `meglepetés-detektor érzékenysége` (jelenleg nincs implementálva): ~0.5 nap
+- Tesztek + új batch + elemzés: ~1 nap
+- **Összesen: 2-3 nap, ha eldöntöd, hogy érdemes a Modul A teljes integrációja**.
+
+A jelen kísérlet eredménye alapján — a H1 cáfolat világos jelzés — érdemes előbb újragondolni, hogy a "kreatív álmodás" mechanikusan **mit kellene** hozzon a gráf-építésbe, mielőtt további paramétert implementálunk. A `far_domain_pref` várhatóan a H1-et tudná javítani; de ha a koncepció maga hibás, a több implementáció csak több zajt termel.

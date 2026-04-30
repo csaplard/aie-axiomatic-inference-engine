@@ -26,6 +26,8 @@ A két mechanizmus **független** és **különböző gráf-tulajdonságot ír**
 - **[EXPERIMENT_PRIORITY.md](EXPERIMENT_PRIORITY.md)** — C kísérlet: priority_weight mechanizmus tesztje (cáfolt elsődleges hipotézis + nyitott post-hoc megfigyelés)
 - **[EXPERIMENT_D.md](EXPERIMENT_D.md)** — D kísérlet: 2D dizájn (priority × adjacency) confound-free setupon — új saturációs confound felfedezve, a 4. mechanizmus sorsa továbbra is nyitott
 - **[METHODS_NOTES.md](METHODS_NOTES.md)** — confound-térkép + metrika-revízió (E pre-regisztráció előkészítése; az exploratórikus mérési-feltétel-feltérképezés rögzítése)
+- **[PLAN_BRAIN_ARCHITECTURE.md](PLAN_BRAIN_ARCHITECTURE.md)** — vízió: AIE → moduláris brain-architektúra (5 modul, A: hipnagóg mód kész)
+- **[EXPERIMENT_HYPNAGOGIC.md](EXPERIMENT_HYPNAGOGIC.md)** — Modul A: hipnagóg üzemmód + Fisher-detektor, 3-karú pre-reg + V-feltétel + utórész részleges megerősítéssel (H2 PASS, H1+H4 FAIL)
 - **[experiments/README.md](experiments/README.md)** — hogyan futtasd újra a kísérleteket (~10-15 perc compute)
 - **[EXPERIMENT_TIMELESS.md](EXPERIMENT_TIMELESS.md)** — történeti: az "időtlen univerzum" eredeti kísérleti elgondolás
 - **[ROADMAP.md](ROADMAP.md)** — fejlesztési fázisok
