@@ -6,7 +6,7 @@ Kis n (axióma-mátrix) — O(n²) / SCC + DAG DP.
 from __future__ import annotations
 
 from collections import deque
-from typing import List, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 import numpy as np
 
@@ -188,6 +188,78 @@ def topological_depth_partition(
     tl = _sub_topo(low_mask)
     ratio = float(th) / float(max(tl, 1))
     return th, tl, ratio
+
+
+def topological_depth_partition_normalized(
+    A: np.ndarray,
+    node_priority: np.ndarray,
+    q_high: float = 0.67,
+    q_low: float = 0.33,
+    n_permutations: int = 50,
+    rng: Optional["np.random.Generator"] = None,
+) -> Tuple[float, float, float]:
+    """
+    Normalizált TOPO partíció — méret-érzéketlen mérőszám priority-jelhez.
+
+    Random-permutáció baseline-hoz viszonyít: a tényleges priority-eloszláson
+    kiszámolja a (TOPO_high, TOPO_low, ratio) hármast, majd `n_permutations`
+    random permutációval ugyanazt — a permutációk "null priority" baseline-t
+    generálnak. Ez **kontrollál** a gráf-struktúrából eredő partícionálási
+    artefaktokra.
+
+    Visszaadja:
+        z_score_high : (actual_topo_high - mean(perm_topo_high)) / std(perm)
+                       — hány szórásnyira van a tényleges high-partíció TOPO-ja
+                       a random-baseline átlagától.
+        z_score_low  : ugyanaz a low partícióra (ellentétes irány).
+        normalized_ratio : actual_ratio / median(perm_ratios) — a partíció-arány
+                       konstans-eltolás-mentes változata.
+
+    Megjegyzés: a metrika MAGAS z_score_high és ALACSONY z_score_low értékek
+    kombinációja az erős priority-koncentráció jele, függetlenül attól, hogy
+    a globális TOPO saturált-e vagy sem.
+    """
+    if rng is None:
+        rng = np.random.default_rng(seed=42)
+
+    n, _ = _build_adj_offdiag(A)
+    if n == 0 or len(node_priority) != n:
+        return float("nan"), float("nan"), float("nan")
+
+    actual_high, actual_low, actual_ratio = topological_depth_partition(
+        A, node_priority, q_high=q_high, q_low=q_low
+    )
+
+    perm_high: list = []
+    perm_low: list = []
+    perm_ratio: list = []
+    pri = np.asarray(node_priority, dtype=np.float64).copy()
+    for _ in range(n_permutations):
+        rng.shuffle(pri)
+        h, l, r = topological_depth_partition(A, pri, q_high=q_high, q_low=q_low)
+        perm_high.append(h)
+        perm_low.append(l)
+        perm_ratio.append(r)
+
+    ph = np.array(perm_high, dtype=np.float64)
+    pl = np.array(perm_low, dtype=np.float64)
+    pr = np.array(perm_ratio, dtype=np.float64)
+
+    def _z(actual: float, baseline: np.ndarray) -> float:
+        std = float(baseline.std())
+        if std < 1e-9:
+            return 0.0  # baseline nincs varianciája — minden permutáció ugyanazt adja
+        return (actual - float(baseline.mean())) / std
+
+    z_high = _z(float(actual_high), ph)
+    z_low = _z(float(actual_low), pl)
+    perm_ratio_med = float(np.median(pr)) if pr.size > 0 else 1.0
+    norm_ratio = (
+        float(actual_ratio) / perm_ratio_med
+        if perm_ratio_med > 1e-9
+        else float("nan")
+    )
+    return z_high, z_low, norm_ratio
 
 
 def asymmetry_ratio(A: np.ndarray) -> float:

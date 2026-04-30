@@ -154,5 +154,42 @@ class PartitionMetricTests(unittest.TestCase):
         self.assertEqual(topo_l, 0)
 
 
+class NormalizedPartitionMetricTests(unittest.TestCase):
+    """A topological_depth_partition_normalized teszt: random-permutáció baseline."""
+
+    def test_uniform_priority_gives_z_near_zero(self) -> None:
+        """Uniform priority esetén a tényleges és a permutált baseline egyforma →
+        z-score ≈ 0."""
+        from graph_metrics import topological_depth_partition_normalized
+        n = 10
+        A = np.eye(n, dtype=np.float64)
+        for i in range(n - 1):
+            A[i, i + 1] = 1.0
+        pri = np.full(n, 0.5, dtype=np.float64)  # uniform
+        z_h, z_l, nr = topological_depth_partition_normalized(
+            A, pri, n_permutations=20
+        )
+        # uniform priority → minden permutáció ugyanaz → std≈0 → z=0 (per definíció)
+        self.assertEqual(z_h, 0.0)
+        self.assertEqual(z_l, 0.0)
+
+    def test_perfect_priority_alignment_gives_high_z(self) -> None:
+        """Ha a priority pont a strukturálisan mély részt jelöli ki, z_high magas."""
+        from graph_metrics import topological_depth_partition_normalized
+        # 10-csúcsos lánc: 0->1->2->3->4 (mély rész), 5->6 (sekély rész), 7,8,9 izolált
+        n = 10
+        A = np.eye(n, dtype=np.float64)
+        for i in range(4):
+            A[i, i + 1] = 1.0
+        A[5, 6] = 1.0
+        # priority: az első 4 csúcs (0-3) magas, többi alacsony
+        pri = np.array([0.9, 0.9, 0.9, 0.9, 0.5, 0.1, 0.1, 0.5, 0.5, 0.5])
+        z_h, z_l, nr = topological_depth_partition_normalized(
+            A, pri, n_permutations=30
+        )
+        # Várjuk: z_high pozitív (a tényleges TOPO_high magasabb mint a permutált baseline)
+        self.assertGreater(z_h, 0.5)  # legalább 0.5 szórásnyira a baseline fölött
+
+
 if __name__ == "__main__":
     unittest.main()
