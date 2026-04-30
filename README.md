@@ -23,9 +23,16 @@ A két mechanizmus **független** és **különböző gráf-tulajdonságot ír**
 
 - **[THEORY.md](THEORY.md)** — átfogalmazott tézis: két szétválasztott mechanizmus
 - **[EXPERIMENT_IMMUNE_DENSITY.md](EXPERIMENT_IMMUNE_DENSITY.md)** — a kontroll-kísérlet pre-regisztrációja, eredményei, és verdict-je
+- **[EXPERIMENT_PRIORITY.md](EXPERIMENT_PRIORITY.md)** — C kísérlet: priority_weight mechanizmus tesztje (cáfolt elsődleges hipotézis + nyitott post-hoc megfigyelés)
 - **[experiments/README.md](experiments/README.md)** — hogyan futtasd újra a kísérleteket (~10-15 perc compute)
 - **[EXPERIMENT_TIMELESS.md](EXPERIMENT_TIMELESS.md)** — történeti: az "időtlen univerzum" eredeti kísérleti elgondolás
 - **[ROADMAP.md](ROADMAP.md)** — fejlesztési fázisok
+
+### Followup observation (nyitott kérdés)
+
+A C kísérletben (priority_weight mechanizmus) a pre-regisztrált elsődleges hipotézis **cáfolódott** (priority NEM koncentrálja a TOPO-mélyülést a magas-priority csúcsokra, p=0.97 a vártnak ellentétes irányban). A post-hoc analízis viszont egy **új mintázatra** mutatott: a priority-eloszlás a heurisztikán keresztül **drasztikusan átrendezi** az immunrendszer aktivitását (RRR a `priority_thesis` 0.31-tól a `priority_inverted` 0.98-ig terjed, Mann-Whitney p = 6·10⁻⁹).
+
+Ez egy **post-hoc megfigyelés**, **nem megerősített mechanizmus**. Két versengő magyarázat él (domain-koherencia vs chain-adjacency), és pre-regisztrált replikációs kísérlet (D) szükséges a megerősítéséhez. Lásd: [EXPERIMENT_PRIORITY.md](EXPERIMENT_PRIORITY.md) utórész.
 
 ## Gyors reprodukció
 

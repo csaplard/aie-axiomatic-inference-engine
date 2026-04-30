@@ -208,3 +208,52 @@ A kísérletek (A1+B+B'+C) együtt:
 4. **Immun-aktivitás ← priority** (post-hoc, p=10⁻⁸ thesis vs inverted) — **új, megerősítendő**
 
 A C kísérlet a 4. mechanizmust **gyanús erős mintázatként** dokumentálja, de mint **post-hoc megfigyelést**, nem mint pre-regisztrált bizonyítékot. A formális megerősítéshez új kísérlet kell.
+
+---
+
+## Függelék: post-hoc index-távolság diagnosztika (D kísérlet tervezéséhez)
+
+A post-hoc RRR-mintázatra két versengő magyarázat élt:
+- **(a) Domain-coherence**: priority-eloszlás illeszkedése/inkongruenciája a domain-szerkezethez
+- **(b) Chain-adjacency**: a magas-priority csúcsok közelsége a kauzális gerincben + a forbidden_edges/negation_pairs közeli-távolság placement-je
+
+A mechanizmus szétválasztásához egy gyors diagnosztikai re-run, seed=0, 2000 lépés a 4 priority karra. Lépésenként rögzítve a (i, j, reject_reason) hármas a `_last_think_snapshot`-ból.
+
+### Eredmény (script: [`experiments/pair_distance_diagnostic.py`](experiments/pair_distance_diagnostic.py))
+
+| Kar | mean \|i-j\| összes próba | mean \|i-j\| immun-rejekt | n immun-rejekt |
+|---|---:|---:|---:|
+| priority_thesis | 22.38 | 19.30 | 312 |
+| priority_uniform | 24.06 | 28.99 (medián 46) | 266 |
+| priority_random | 22.39 | 27.37 | 251 |
+| priority_inverted | 23.25 | **13.40 (medián 3)** | 124 |
+
+Mann-Whitney U (kétoldali p, immun-rejekt eloszlások):
+- thesis vs inverted: **p = 2.6·10⁻¹⁰**
+- random vs inverted: **p = 6.9·10⁻¹⁷**
+
+### Confound felfedezés — `n_nodes` default = 64
+
+A diagnosztika közben kiderült, hogy a motor `n_nodes` alapértelmezése **64**, és a 15-csúcsos dense regiszterre `max(64, 15) = 64`-es mátrixban dolgozik. Indexen 15-63 **49 padding csúcs** áll, mind alapértelmezett `priority = 0.5`.
+
+Ez azt jelenti, hogy a C kísérlet **kvantilis-alapú TOPO partícionálása** valójában a padding-domináns priority-eloszlást nézte:
+- q67 = 0.5, q33 = 0.5 (mert 49/64 érték pontosan 0.5)
+- high_mask ≈ 56 csúcs, low_mask ≈ 57 csúcs, **óriási átfedéssel**
+
+A pre-regisztrált H1 teszt **valójában nem mérte azt, amit szerettünk volna mérni** — a partícióban a registry-csúcsok elenyésző kisebbség. Ez nem cáfolja az eredményt (a verdict továbbra is "H1 cáfolt"), de **a cáfolat oka most más**: nem azt mondja, hogy a priority nem koncentrál, hanem azt, hogy a confound miatt nem **mérhető** tisztán, hogy koncentrál-e.
+
+### Két egymást nem kizáró megállapítás
+
+1. **Chain-adjacency részben magyarázza** a `priority_inverted` extrém RRR-jét — a heurisztika konszekutív párokra (medián|i-j|=3!) koncentrálja a próbákat, és a forbidden_edges/negation_pairs registry-indextér 0-14 közeli párokra esik.
+
+2. **A `priority_uniform` immun-rejekt mean|i-j|=29 nem chain-adjacency** — uniform-on nincs adjacency-bias, hanem a padding-confound mutatja meg az "immun-rejekt csúcsok kiugrása" mintázatát.
+
+### Ajánlás a D kísérlet dizájnjához
+
+**2D dizájn szükséges:** priority-koherencia × adjacency-konfiguráció.
+
+Két kötelező változtatás a C-hez képest:
+1. **`n_nodes = registry size`** — ha 15-csúcsos regiszter, akkor `--n-nodes 15` az engine-nek (a runner-be új flag), eltünteti a padding-domináns partíciót.
+2. **Külön kontroll a chain-adjacency-re** — kar, ahol a `forbidden_edges` és `negation_pairs` placement véletlen, nem a "j-i ≥ 2" kényszerrel.
+
+Várható mátrix: ~6-8 kar (3 priority-szint × 2-3 adjacency-konfiguráció), ~10 perc compute 30 seeddel. A pre-regisztráció ezzel az információval most informáltabb lesz — **érlelve** állítsuk össze, nem siettetve.
