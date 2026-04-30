@@ -40,6 +40,9 @@ from episodic_memory import EpisodicMemory
 # Modul D — PFC-analóg meta-monitor (stuck-detection + intervention)
 from meta_monitor import InterventionManager, StuckDetector
 
+# Modul C — ACC-analóg confidence_score (per-edge episztémikus címkézés)
+from confidence_score import ConfidenceComputer, epistemic_label
+
 
 class AxiomDomain(str, Enum):
     LOGIC = "LOGIC"
@@ -226,6 +229,8 @@ class AxiomaticInferenceEngine:
     _stuck_detector: Optional[StuckDetector] = field(init=False, default=None)
     _intervention_manager: Optional[InterventionManager] = field(init=False, default=None)
     _meta_intervention_mode: str = field(init=False, default="hypnagogic")
+    # Modul C — confidence_score (opcionális komponens)
+    _confidence_computer: Optional[ConfidenceComputer] = field(init=False, default=None)
     _negation: Dict[int, int] = field(init=False, default_factory=dict)
     _source_trust: Dict[str, float] = field(init=False, default_factory=dict)
     _lock: threading.RLock = field(default_factory=threading.RLock, init=False)
@@ -497,18 +502,37 @@ class AxiomaticInferenceEngine:
         self._maybe_meta_monitor_step()
 
     def _maybe_meta_monitor_step(self) -> None:
-        """Modul D: stuck-detector observe + intervention tick."""
-        if self._stuck_detector is None or self._intervention_manager is None:
-            return
+        """Modul D: stuck-detector observe + intervention tick.
+        Modul C: ha confidence_computer aktív, observe pair + stuck event."""
         snap = self._last_think_snapshot
-        fired = self._stuck_detector.observe(
-            snap.i, snap.j, axiom_labels=self.axiom_labels,
-        )
-        self._intervention_manager.tick(
-            fired=fired,
-            fired_key=self._stuck_detector.last_fired_key() if fired else None,
-            step_id=self._think_step_counter,
-        )
+        fired = False
+        # Modul D: detector + intervention
+        if self._stuck_detector is not None and self._intervention_manager is not None:
+            fired = self._stuck_detector.observe(
+                snap.i, snap.j, axiom_labels=self.axiom_labels,
+            )
+            self._intervention_manager.tick(
+                fired=fired,
+                fired_key=self._stuck_detector.last_fired_key() if fired else None,
+                step_id=self._think_step_counter,
+            )
+        # Modul C: pair-history (recent_window) + stuck-event-history
+        if self._confidence_computer is not None:
+            self._confidence_computer.observe_pair(snap.i, snap.j)
+            if fired and self._stuck_detector is not None:
+                k = self._stuck_detector.last_fired_key()
+                if k is not None:
+                    self._confidence_computer.observe_stuck_event(
+                        self._think_step_counter, k,
+                    )
+
+    def attach_confidence_computer(self, computer: ConfidenceComputer) -> None:
+        """Csatlakoztat egy ConfidenceComputer-t — a recent_window automatikusan
+        frissül minden think_step után."""
+        self._confidence_computer = computer
+
+    def detach_confidence_computer(self) -> None:
+        self._confidence_computer = None
 
     def _maybe_hypnagogic_step(self, q: float) -> None:
         """Modul A: emission rögzítése + Fisher v(N) frissítése + állapotgép tick.
