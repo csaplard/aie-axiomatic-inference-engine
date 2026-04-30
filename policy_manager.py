@@ -5,7 +5,7 @@ YAML-alapú policy betöltése és hot-reload (mtime), opcionális CPU-cél alap
 from __future__ import annotations
 
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -54,6 +54,36 @@ class OptimizationPolicy:
 
 
 @dataclass
+class HypnagogicPolicy:
+    """Hipnagóg üzemmód policy: három fázisú lazítás (entry → deep → exit).
+
+    A mezők a fázishosszokat (think_step szám), a cooldown időt, a lazítási
+    paraméter cél-értékeket DEEP fázisban, valamint a Fisher-trigger
+    konfigurációt és log útvonalat tartalmazzák. enabled=False esetén az
+    állapotgép lényegében inaktív (alap mód).
+    """
+
+    enabled: bool = False
+    # Phase durations in think_step counts
+    entry_steps: int = 8           # 5-10 from spec
+    deep_steps: int = 35           # 20-50 from spec
+    exit_steps: int = 8            # 5-10 from spec
+    # Cooldown in think_step counts after exit before re-entry is possible
+    cooldown_steps: int = 200
+    # Relaxation parameters (1.0 = strict / waking; values < 1.0 = relaxed)
+    forbidden_weight_deep: float = 0.3
+    forbidden_weight_entry_start: float = 1.0
+    negation_threshold_deep: float = 0.5
+    far_domain_pref_deep: float = 0.6
+    verify_chain_depth_deep: int = 3
+    # Trigger configuration (Fisher path speed)
+    fisher_trigger_factor: float = 2.0
+    fisher_min_history: int = 20
+    # Logging
+    log_path: str = "hypnagogic_log.jsonl"
+
+
+@dataclass
 class DiscoveryPolicy:
     """Felfedező / daemon: tiltások lazítása, napló, végtelen think_loop opció."""
 
@@ -79,6 +109,8 @@ class DiscoveryPolicy:
     discovery_skip_log_trust_below: float = -0.6
     # Reprodukálhatóság: ha nem None, az engine numpy/random RNG-t ezzel seedeli.
     random_seed: Optional[int] = None
+    # Hipnagóg al-policy (alapértelmezésben kikapcsolva)
+    hypnagogic: HypnagogicPolicy = field(default_factory=HypnagogicPolicy)
 
 
 def _default_optimization_policy() -> OptimizationPolicy:
@@ -92,6 +124,29 @@ def _default_optimization_policy() -> OptimizationPolicy:
 
 def _default_discovery_policy() -> DiscoveryPolicy:
     return DiscoveryPolicy()
+
+
+def _parse_hypnagogic_policy(raw: Dict[str, Any]) -> HypnagogicPolicy:
+    """Hipnagóg al-policy parsolás YAML dict-ből; üres input → alapértelmezés."""
+    if not raw:
+        return HypnagogicPolicy()
+    return HypnagogicPolicy(
+        enabled=bool(raw.get("enabled", False)),
+        entry_steps=int(raw.get("entry_steps", 8)),
+        deep_steps=int(raw.get("deep_steps", 35)),
+        exit_steps=int(raw.get("exit_steps", 8)),
+        cooldown_steps=int(raw.get("cooldown_steps", 200)),
+        forbidden_weight_deep=float(raw.get("forbidden_weight_deep", 0.3)),
+        forbidden_weight_entry_start=float(
+            raw.get("forbidden_weight_entry_start", 1.0)
+        ),
+        negation_threshold_deep=float(raw.get("negation_threshold_deep", 0.5)),
+        far_domain_pref_deep=float(raw.get("far_domain_pref_deep", 0.6)),
+        verify_chain_depth_deep=int(raw.get("verify_chain_depth_deep", 3)),
+        fisher_trigger_factor=float(raw.get("fisher_trigger_factor", 2.0)),
+        fisher_min_history=int(raw.get("fisher_min_history", 20)),
+        log_path=str(raw.get("log_path", "hypnagogic_log.jsonl")),
+    )
 
 
 def _parse_discovery_policy(raw: Dict[str, Any]) -> DiscoveryPolicy:
@@ -129,6 +184,7 @@ def _parse_discovery_policy(raw: Dict[str, Any]) -> DiscoveryPolicy:
             if raw.get("random_seed") is not None
             else None
         ),
+        hypnagogic=_parse_hypnagogic_policy(raw.get("hypnagogic") or {}),
     )
 
 
@@ -251,6 +307,11 @@ class PolicyManager:
     def discovery_policy(self) -> DiscoveryPolicy:
         with self._lock:
             return self._discovery
+
+    def hypnagogic_policy(self) -> HypnagogicPolicy:
+        """A jelenlegi parsolt hipnagóg al-policy elérése (thread-safe)."""
+        with self._lock:
+            return self._discovery.hypnagogic
 
     @property
     def discovery_enabled(self) -> bool:

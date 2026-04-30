@@ -29,6 +29,10 @@ from self_optimization import (
     SelfOptimizationAdvisor,
     SystemMetrics,
 )
+# Modul A — hipnagóg üzemmód (opcionális, csak ha policy-ben aktív)
+from emission_logger import EmissionLogger
+from fisher_realtime import FisherRealtime
+from hypnagogic_state import HypnagogicPhase, HypnagogicStateMachine
 
 
 class AxiomDomain(str, Enum):
@@ -207,6 +211,11 @@ class AxiomaticInferenceEngine:
     _registry: Optional[AxiomRegistry] = field(init=False, default=None)
     # priority_weight csúcsonként (np.array, len=n_nodes); None, ha nincs regiszter
     _node_priority: Optional[np.ndarray] = field(init=False, default=None)
+    # Modul A — hipnagóg üzemmód (opcionális komponensek)
+    _emission_logger: Optional[EmissionLogger] = field(init=False, default=None)
+    _fisher_realtime: Optional[FisherRealtime] = field(init=False, default=None)
+    _hypnagogic_state: Optional[HypnagogicStateMachine] = field(init=False, default=None)
+    _hypnagogic_log_path: Optional[Path] = field(init=False, default=None)
     _negation: Dict[int, int] = field(init=False, default_factory=dict)
     _source_trust: Dict[str, float] = field(init=False, default_factory=dict)
     _lock: threading.RLock = field(default_factory=threading.RLock, init=False)
@@ -253,6 +262,33 @@ class AxiomaticInferenceEngine:
             )
             if self._policy is not None:
                 self._opt.sync_from_policy(self._policy)
+        self._maybe_init_hypnagogic_components()
+
+    def _maybe_init_hypnagogic_components(self) -> None:
+        """Ha a policy-ben hypnagogic.enabled=True, inicializálja a Modul A modulokat.
+        Az emission_logger és fisher_realtime mindig aktív, ha a hypnagogic policy
+        engedélyezve van; az állapotgép is létrejön (kezdetben AWAKE)."""
+        if self._policy is None:
+            return
+        try:
+            hp = self._policy.hypnagogic_policy()
+        except AttributeError:
+            return
+        if not hp.enabled:
+            return
+        # Hipnagóg log útvonal: policy-mappához relatív, ha nem abszolút
+        log_path = self._resolve_policy_relative_path(hp.log_path)
+        self._hypnagogic_log_path = log_path
+        # Emission logger: a fő discovery_log mellett egy emission JSONL is megy
+        emission_log_path = log_path.with_suffix(".emissions.jsonl")
+        self._emission_logger = EmissionLogger(
+            axiom_labels=dict(self.axiom_labels),
+            log_path=emission_log_path,
+        )
+        # Fisher real-time detektor (window konfigurálható az alapérték elég)
+        self._fisher_realtime = FisherRealtime(window_size=200, history_size=100)
+        # Hipnagóg állapotgép
+        self._hypnagogic_state = HypnagogicStateMachine(hp)
 
     def _load_policy(self) -> None:
         self._policy = None
@@ -419,6 +455,86 @@ class AxiomaticInferenceEngine:
             )
         self._after_think_step_record()
         self._maybe_telemetry_log(q)
+        self._maybe_hypnagogic_step(q)
+
+    def _maybe_hypnagogic_step(self, q: float) -> None:
+        """Modul A: emission rögzítése + Fisher v(N) frissítése + állapotgép tick.
+        Csak akkor fut, ha a policy-ben hypnagogic.enabled=True (akkor hozzuk
+        létre az aktorokat). Hipnagóg módban (DEEP/ENTRY/EXIT) minden lépés
+        után a hipnagóg log fájlba is bekerül egy rekord."""
+        if self._emission_logger is None or self._fisher_realtime is None:
+            return
+        snap = self._last_think_snapshot
+        record = self._emission_logger.record(
+            step_id=self._think_step_counter,
+            tick=self._think_step_counter,
+            snapshot=snap,
+        )
+        # Fisher path-speed frissítés
+        v_n = self._fisher_realtime.update(record["emission"])
+        trigger = False
+        if self._hypnagogic_state is not None:
+            hp = self._policy.hypnagogic_policy() if self._policy is not None else None
+            if hp is not None:
+                trigger = self._fisher_realtime.detect_trigger(
+                    threshold_factor=hp.fisher_trigger_factor,
+                    min_history=hp.fisher_min_history,
+                )
+            self._hypnagogic_state.tick(fisher_trigger=trigger)
+            phase = self._hypnagogic_state.current_phase()
+            # Ha hipnagóg fázisban vagyunk, írunk a hipnagóg logba
+            if (phase != HypnagogicPhase.AWAKE and phase != HypnagogicPhase.COOLDOWN
+                    and self._hypnagogic_log_path is not None):
+                self._write_hypnagogic_log(record, q, phase, v_n, trigger)
+
+    def _write_hypnagogic_log(
+        self, record: Dict[str, Any], q: float,
+        phase: "HypnagogicPhase", v_n: Optional[float], trigger: bool,
+    ) -> None:
+        """Egy soros JSONL bejegyzés a hypnagogic_log.jsonl-be."""
+        try:
+            self._hypnagogic_log_path.parent.mkdir(parents=True, exist_ok=True)
+            relax = (
+                self._hypnagogic_state.current_relaxation()
+                if self._hypnagogic_state is not None else {}
+            )
+            entry = {
+                "step_id": record.get("step_id"),
+                "tick": record.get("tick"),
+                "phase": phase.value if hasattr(phase, "value") else str(phase),
+                "emission": record.get("emission"),
+                "pair": record.get("pair"),
+                "domain_transition": record.get("domain_transition"),
+                "reject_reason": record.get("reject_reason"),
+                "q": q,
+                "fisher_v_n": v_n,
+                "fisher_trigger": bool(trigger),
+                "relaxation": relax,
+            }
+            import json as _json
+            with self._hypnagogic_log_path.open("a", encoding="utf-8") as f:
+                f.write(_json.dumps(entry, ensure_ascii=False) + "\n")
+        except OSError:
+            pass
+
+    def start_hypnagogic_episode(self) -> bool:
+        """Indít egy hipnagóg epizódot (AWAKE → ENTRY). Visszaadja, sikerült-e
+        (False, ha az állapotgép nincs inicializálva, vagy nem AWAKE-ben van)."""
+        if self._hypnagogic_state is None:
+            return False
+        return self._hypnagogic_state.start_entry()
+
+    def get_current_relaxation(self) -> Dict[str, Any]:
+        """A hipnagóg állapotgép aktuális lazítási paramétereit adja vissza.
+        AWAKE / nincs állapotgép → szigorú alapértelmezések."""
+        if self._hypnagogic_state is None:
+            return {
+                "forbidden_weight": 1.0,
+                "negation_threshold": 1.0,
+                "far_domain_pref": 0.0,
+                "verify_chain_depth": 1,
+            }
+        return dict(self._hypnagogic_state.current_relaxation())
 
     def _maybe_telemetry_log(self, q: float) -> None:
         if self._policy is None or not self._policy.telemetry_enabled:
@@ -482,12 +598,25 @@ class AxiomaticInferenceEngine:
         return new_b
 
     def is_edge_forbidden(self, i: int, j: int) -> bool:
-        """Ellentmondás / időnyíl: tiltott irányított él (pl. jövő → múlt entrópia)."""
+        """Ellentmondás / időnyíl: tiltott irányított él (pl. jövő → múlt entrópia).
+
+        Hipnagóg módban a forbidden_weight szabályozza: ha < 1.0, akkor a tilalom
+        valószínűségi (forbidden_weight valószínűséggel hat). 1.0 = kemény szabály
+        (default), 0.0 = ki van kapcsolva. Az AWAKE/COOLDOWN módban mindig 1.0."""
         if self._policy is not None and self._policy.ignore_forbidden_edges:
             return False
-        if self._registry is not None and (i, j) in self._registry.forbidden_edges:
-            return True
-        return False
+        if self._registry is None or (i, j) not in self._registry.forbidden_edges:
+            return False
+        # Hipnagóg lazítás: forbidden_weight ∈ [0, 1] valószínűséggel hat a tilalom
+        if self._hypnagogic_state is not None:
+            relax = self._hypnagogic_state.current_relaxation()
+            w = float(relax.get("forbidden_weight", 1.0))
+            if w >= 1.0:
+                return True
+            if w <= 0.0:
+                return False
+            return bool(np.random.random() < w)
+        return True
 
     def _has_path_unlocked(self, A: np.ndarray, start: int, end: int) -> bool:
         """Irányított út BFS (zároló nélkül)."""
