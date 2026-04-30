@@ -364,6 +364,34 @@ class AxiomaticInferenceEngine:
         p = weights / s
         return int(np.random.choice(candidates, p=p))
 
+    def _weighted_index_pick_with_domain_bias(
+        self, candidates: np.ndarray, source_idx: int, far_pref: float
+    ) -> int:
+        """Mint _weighted_index_pick, de ha far_pref > 0, a `source_idx`-tól
+        eltérő domain-en lévő csúcsokat (1 + far_pref) szorzóval favorizálja.
+
+        Hipnagóg DEEP fázisban (default far_pref=0.6) → far-domain pár
+        ~1.6x súllyal. AWAKE/COOLDOWN-ban far_pref=0.0 → változatlan."""
+        if candidates.size == 0:
+            return -1
+        # Alap súlyok: priority, vagy uniform ha nincs priority
+        if self._node_priority is not None:
+            weights = self._node_priority[candidates].astype(np.float64)
+        else:
+            weights = np.ones(candidates.size, dtype=np.float64)
+        # Domain-bias alkalmazása
+        if far_pref > 0.0 and source_idx in self.axiom_labels:
+            source_domain = self.axiom_labels[source_idx]
+            for k, c in enumerate(candidates):
+                cand_domain = self.axiom_labels.get(int(c))
+                if cand_domain is not None and cand_domain != source_domain:
+                    weights[k] *= (1.0 + far_pref)
+        s = float(weights.sum())
+        if s <= 0:
+            return int(np.random.choice(candidates))
+        p = weights / s
+        return int(np.random.choice(candidates, p=p))
+
     def _seed_axioms(self) -> None:
         """Regiszter: kauzális élek + címkék + Hamilton-gyűrű; egyébként alap domain + gyűrű."""
         n = self.n_nodes
@@ -1133,9 +1161,18 @@ class AxiomaticInferenceEngine:
         # Súlyozott pickelés a top-k high és top-k low csúcsból.
         high_pool = high[: min(k, n)]
         low_pool = low[: min(k, n)]
+        # Hipnagóg DEEP fázisban a j-választás far-domain-bias-szal történik
+        far_pref = 0.0
+        if self._hypnagogic_state is not None:
+            far_pref = float(
+                self._hypnagogic_state.current_relaxation().get("far_domain_pref", 0.0)
+            )
         for _ in range(min(12, n * 2)):
             i = self._weighted_index_pick(high_pool)
-            j = self._weighted_index_pick(low_pool)
+            if far_pref > 0.0 and i >= 0:
+                j = self._weighted_index_pick_with_domain_bias(low_pool, i, far_pref)
+            else:
+                j = self._weighted_index_pick(low_pool)
             if i < 0 or j < 0:
                 continue
             if i == j:

@@ -199,8 +199,11 @@ def run_seed(arm: str, seed: int, n_steps: int, out_dir: Path) -> dict:
         # v(N) history (from FisherRealtime _history deque)
         if eng._fisher_realtime is not None:
             vn_history = list(eng._fisher_realtime._history)
+            # 4 alternatív metrika (csak a végállapotra; gyors, ablakszélességű egy snapshot)
+            alt_metrics = eng._fisher_realtime.compute_alt_metrics() or {}
         else:
             vn_history = []
+            alt_metrics = {}
 
         return {
             "arm": arm,
@@ -212,6 +215,10 @@ def run_seed(arm: str, seed: int, n_steps: int, out_dir: Path) -> dict:
             "vn_mean": float(np.mean(vn_history)) if vn_history else float("nan"),
             "vn_std": float(np.std(vn_history)) if vn_history else float("nan"),
             "vn_history_len": len(vn_history),
+            "alt_frobenius": alt_metrics.get("frobenius", float("nan")),
+            "alt_spectral_gap": alt_metrics.get("spectral_gap", float("nan")),
+            "alt_row_entropy_diff": alt_metrics.get("row_entropy_diff", float("nan")),
+            "alt_kl": alt_metrics.get("kl", float("nan")),
         }
     finally:
         policy.unlink(missing_ok=True)

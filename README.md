@@ -27,7 +27,8 @@ A két mechanizmus **független** és **különböző gráf-tulajdonságot ír**
 - **[EXPERIMENT_D.md](EXPERIMENT_D.md)** — D kísérlet: 2D dizájn (priority × adjacency) confound-free setupon — új saturációs confound felfedezve, a 4. mechanizmus sorsa továbbra is nyitott
 - **[METHODS_NOTES.md](METHODS_NOTES.md)** — confound-térkép + metrika-revízió (E pre-regisztráció előkészítése; az exploratórikus mérési-feltétel-feltérképezés rögzítése)
 - **[PLAN_BRAIN_ARCHITECTURE.md](PLAN_BRAIN_ARCHITECTURE.md)** — vízió: AIE → moduláris brain-architektúra (5 modul, A: hipnagóg mód kész)
-- **[EXPERIMENT_HYPNAGOGIC.md](EXPERIMENT_HYPNAGOGIC.md)** — Modul A: hipnagóg üzemmód + Fisher-detektor, 3-karú pre-reg + V-feltétel + utórész részleges megerősítéssel (H2 PASS, H1+H4 FAIL)
+- **[EXPERIMENT_HYPNAGOGIC.md](EXPERIMENT_HYPNAGOGIC.md)** — Modul A E1: 3-karú pre-reg + V-feltétel + részleges megerősítés (H2 PASS, H1+H4 FAIL)
+- **[EXPERIMENT_HYPNAGOGIC_E2.md](EXPERIMENT_HYPNAGOGIC_E2.md)** — Modul A E2: teljes(ebb) implementáció + H4-multi (4 Markov-metrika Bonferroni). Tiszta végpont: H2 PASS megerősítve (p=10⁻⁸), kreatív-felfedezés és Markov-detekció hipotézisek CÁFOLVA. Modul A lezárva.
 - **[experiments/README.md](experiments/README.md)** — hogyan futtasd újra a kísérleteket (~10-15 perc compute)
 - **[EXPERIMENT_TIMELESS.md](EXPERIMENT_TIMELESS.md)** — történeti: az "időtlen univerzum" eredeti kísérleti elgondolás
 - **[ROADMAP.md](ROADMAP.md)** — fejlesztési fázisok

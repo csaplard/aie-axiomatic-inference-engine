@@ -45,7 +45,7 @@ from __future__ import annotations
 
 from collections import deque
 from statistics import median
-from typing import Deque, Optional, Tuple
+from typing import Deque, Dict, Optional, Tuple
 
 import numpy as np
 
@@ -139,6 +139,68 @@ class FisherRealtime:
         if latest is None or baseline is None:
             return False
         return latest > baseline * threshold_factor
+
+    def compute_alt_metrics(self) -> Optional[Dict[str, float]]:
+        """Alternatív metrikák a 2 szomszédos ablak T mátrixaira.
+
+        Visszaadja a következőket (mind valós szám, NaN ha nem számolható):
+          - frobenius: ||T_curr - T_prev||_F (= path_speed())
+          - spectral_gap: |λ1(T_curr) - λ1(T_prev)| (legnagyobb sajátérték abszolút eltérése)
+          - row_entropy_diff: ||H(T_curr) - H(T_prev)||_2 ahol H sorok entrópiája
+          - kl: szimmetrikus átlagos KL(T_curr_row || T_prev_row) sorokra (Laplace-simítva)
+
+        Mind a 4 ugyanazon a két szomszédos ablakon dolgozik, mint a `update()`.
+        Ha kevés adat van, None.
+        """
+        if len(self._buffer) < 2 * self.window_size:
+            return None
+        arr = np.fromiter(self._buffer, dtype=np.int64, count=len(self._buffer))
+        prev = arr[: self.window_size]
+        curr = arr[self.window_size : 2 * self.window_size]
+        t_prev = self._transition_matrix(prev)
+        t_curr = self._transition_matrix(curr)
+
+        # Frobenius
+        frob = float(np.linalg.norm(t_curr - t_prev, ord="fro"))
+
+        # Spektrális gap (legnagyobb abszolút sajátérték eltérése)
+        try:
+            ev_prev = np.linalg.eigvals(t_prev)
+            ev_curr = np.linalg.eigvals(t_curr)
+            lam_prev = float(np.max(np.abs(ev_prev)))
+            lam_curr = float(np.max(np.abs(ev_curr)))
+            spectral = abs(lam_curr - lam_prev)
+        except np.linalg.LinAlgError:
+            spectral = float("nan")
+
+        # Row entropy delta: minden sor entrópiája külön, majd L2-norma
+        def _row_entropies(T: np.ndarray) -> np.ndarray:
+            # T row stochastic (Laplace-simítva), entrópia: -sum(p log p)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                logT = np.log(T + 1e-12)
+                ent = -(T * logT).sum(axis=1)
+            return ent
+
+        h_prev = _row_entropies(t_prev)
+        h_curr = _row_entropies(t_curr)
+        ent_diff = float(np.linalg.norm(h_curr - h_prev))
+
+        # Szimmetrikus KL (sorszintű átlag, Laplace-simítva már T-ben)
+        # KL(p||q) = sum p log(p/q); szimmetrikus: 0.5*(KL(p||q) + KL(q||p))
+        def _row_kl_sym(P: np.ndarray, Q: np.ndarray) -> float:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                kl_pq = np.sum(P * (np.log(P + 1e-12) - np.log(Q + 1e-12)), axis=1)
+                kl_qp = np.sum(Q * (np.log(Q + 1e-12) - np.log(P + 1e-12)), axis=1)
+            return float(np.mean(0.5 * (kl_pq + kl_qp)))
+
+        kl = _row_kl_sym(t_curr, t_prev)
+
+        return {
+            "frobenius": frob,
+            "spectral_gap": spectral,
+            "row_entropy_diff": ent_diff,
+            "kl": kl,
+        }
 
     def reset(self) -> None:
         """Drop all buffered emissions and path-speed history."""

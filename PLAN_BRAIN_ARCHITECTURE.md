@@ -15,7 +15,13 @@ A vízió betöltése **modulonként történik**. Mindegyik modul **önálló �
 
 ## 2. Modulok prioritás-szerinti sorrendben
 
-### Modul A — Hipnagóg üzemmód + Fisher-detektor (ELSŐ)
+### Modul A — Hipnagóg üzemmód + Fisher-detektor (ELSŐ — IMPLEMENTÁLVA, E2 ALATT)
+
+**Státusz (2026-04-30):**
+- Implementálva: 3-fázisú állapotgép, K=4 emisszió logger, Frobenius v(N), `forbidden_weight` és `negation_threshold` soft-relaxáció, `far_domain_pref` heurisztika-bias.
+- E1 kísérlet (E1 verdict: H2 PASS p=10⁻⁸, H1 FAIL, H4 FAIL).
+- E2 kísérlet **most fut** teljes(ebb) integrációval és H4-multi (4 alternatív metrika).
+- Áthelyezve Modul C-be: `verify_chain_depth`, `surprise detector` (lásd lent).
 
 **Cél:** Egy harmadik üzemmód a daemon mellett, amelyben a szabályok lazulnak, távoli asszociációk születnek, és a mód-átmenet pillanatát a Fisher path speed mérőszám detektálja.
 
@@ -102,9 +108,13 @@ A vízió betöltése **modulonként történik**. Mindegyik modul **önálló �
    - Minden következtetés címkézve: `proven`, `hypothesis`, `uncertain`, `near_contradiction`
    - A daemon különbözőképp kezeli őket
 
-3. **Pre-regisztrált kísérlet** az új mérőszám érzékenységének validálására.
+3. **Többlépéses verify_logic** (Modul A-ból átkerült): a `verify_chain_depth` paraméter konceptuálisan az ACC-analóghoz tartozik — a "mélyebb tranzitív bizonyítás" egy **konfliktus-csökkentő mechanizmus**, nem hipnagóg-relaxáció. Az E1 kísérlet után derült ki, hogy a hipnagóg módban a chain-depth növelése nem ad far-domain többletet (H1 cáfolt), tehát a paraméter természetes helye itt van.
 
-**Becslés:** 2 nap.
+4. **Meglepetés-detektor** (Modul A-ból átkerült): a `surprise score` egy következtetésre — mennyire váratlan a felvett él az addigi gráf alapján. Ez ACC-funkció: a meglepetés "konfliktus-jelzés" a meglévő várakozás és a tényleges él között. Az E1-ben nem volt implementálva; itt kapja meg a természetes helyét.
+
+5. **Pre-regisztrált kísérlet** az új mérőszám érzékenységének validálására.
+
+**Becslés:** 3 nap (a 2 átkerült feature miatt 1 nappal hosszabb).
 
 ### Modul D — Meta-monitor (PFC-analóg) (NEGYEDIK)
 
