@@ -34,6 +34,9 @@ from emission_logger import EmissionLogger
 from fisher_realtime import FisherRealtime
 from hypnagogic_state import HypnagogicPhase, HypnagogicStateMachine
 
+# Modul B — epizodikus memória (narrow scope: persistence + reload)
+from episodic_memory import EpisodicMemory
+
 
 class AxiomDomain(str, Enum):
     LOGIC = "LOGIC"
@@ -563,6 +566,20 @@ class AxiomaticInferenceEngine:
                 "verify_chain_depth": 1,
             }
         return dict(self._hypnagogic_state.current_relaxation())
+
+    # -------- Modul B — epizodikus memória convenience metódusok --------
+
+    def save_state(self, memory_root: Path, label: str, save_rng: bool = True) -> Path:
+        """Az engine teljes belső állapotát menti egy memória-mappába.
+        Modul B (narrow scope) integrációs API."""
+        mem = EpisodicMemory(Path(memory_root))
+        return mem.save_engine_state(self, label, save_rng=save_rng)
+
+    def load_state(self, memory_root: Path, label: str) -> bool:
+        """Visszatölti az engine-be a label-hez tartozó mentett állapotot.
+        Visszaadja: True ha sikerült."""
+        mem = EpisodicMemory(Path(memory_root))
+        return mem.load_engine_state(self, label)
 
     def _maybe_telemetry_log(self, q: float) -> None:
         if self._policy is None or not self._policy.telemetry_enabled:
