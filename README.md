@@ -30,6 +30,7 @@ A két mechanizmus **független** és **különböző gráf-tulajdonságot ír**
 - **[EXPERIMENT_HYPNAGOGIC.md](EXPERIMENT_HYPNAGOGIC.md)** — Modul A E1: 3-karú pre-reg + V-feltétel + részleges megerősítés (H2 PASS, H1+H4 FAIL)
 - **[EXPERIMENT_HYPNAGOGIC_E2.md](EXPERIMENT_HYPNAGOGIC_E2.md)** — Modul A E2: teljes(ebb) implementáció + H4-multi (4 Markov-metrika Bonferroni). Tiszta végpont: H2 PASS megerősítve (p=10⁻⁸), kreatív-felfedezés és Markov-detekció hipotézisek CÁFOLVA. Modul A lezárva.
 - **[EXPERIMENT_MEMORY.md](EXPERIMENT_MEMORY.md)** — Modul B: epizodikus memória (narrow scope persistence + reload). **Tiszta engineering siker**: B-Determinism 30/30 perfekt, B-Continuity p=1.4·10⁻¹¹ mindkét metrikán (Frobenius ratio 0.054, Jaccard 99.64%). Modul C/D infrastruktúra kész.
+- **[EXPERIMENT_META_MONITOR.md](EXPERIMENT_META_MONITOR.md)** — Modul D: PFC-analóg meta-monitor (stuck-detection + hipnagóg intervenció). Calibration scan + 4 hipotézis pre-reg (M-H1 sanity, M-H2 engineering, M-H3 substantive, M-H4 sanity). **Mind a 4 PASS** + 3 V-precondition PASS. A Modul A-ban implementált hipnagóg mechanizmus **stuck-loop megtörésére** működik (újrahasznosítva más kontextusban, mint az eredeti kreatív-felfedezés vízió).
 - **[experiments/README.md](experiments/README.md)** — hogyan futtasd újra a kísérleteket (~10-15 perc compute)
 - **[EXPERIMENT_TIMELESS.md](EXPERIMENT_TIMELESS.md)** — történeti: az "időtlen univerzum" eredeti kísérleti elgondolás
 - **[ROADMAP.md](ROADMAP.md)** — fejlesztési fázisok

@@ -37,6 +37,9 @@ from hypnagogic_state import HypnagogicPhase, HypnagogicStateMachine
 # Modul B — epizodikus memória (narrow scope: persistence + reload)
 from episodic_memory import EpisodicMemory
 
+# Modul D — PFC-analóg meta-monitor (stuck-detection + intervention)
+from meta_monitor import InterventionManager, StuckDetector
+
 
 class AxiomDomain(str, Enum):
     LOGIC = "LOGIC"
@@ -219,6 +222,10 @@ class AxiomaticInferenceEngine:
     _fisher_realtime: Optional[FisherRealtime] = field(init=False, default=None)
     _hypnagogic_state: Optional[HypnagogicStateMachine] = field(init=False, default=None)
     _hypnagogic_log_path: Optional[Path] = field(init=False, default=None)
+    # Modul D — meta-monitor (opcionális komponensek)
+    _stuck_detector: Optional[StuckDetector] = field(init=False, default=None)
+    _intervention_manager: Optional[InterventionManager] = field(init=False, default=None)
+    _meta_intervention_mode: str = field(init=False, default="hypnagogic")
     _negation: Dict[int, int] = field(init=False, default_factory=dict)
     _source_trust: Dict[str, float] = field(init=False, default_factory=dict)
     _lock: threading.RLock = field(default_factory=threading.RLock, init=False)
@@ -487,6 +494,21 @@ class AxiomaticInferenceEngine:
         self._after_think_step_record()
         self._maybe_telemetry_log(q)
         self._maybe_hypnagogic_step(q)
+        self._maybe_meta_monitor_step()
+
+    def _maybe_meta_monitor_step(self) -> None:
+        """Modul D: stuck-detector observe + intervention tick."""
+        if self._stuck_detector is None or self._intervention_manager is None:
+            return
+        snap = self._last_think_snapshot
+        fired = self._stuck_detector.observe(
+            snap.i, snap.j, axiom_labels=self.axiom_labels,
+        )
+        self._intervention_manager.tick(
+            fired=fired,
+            fired_key=self._stuck_detector.last_fired_key() if fired else None,
+            step_id=self._think_step_counter,
+        )
 
     def _maybe_hypnagogic_step(self, q: float) -> None:
         """Modul A: emission rögzítése + Fisher v(N) frissítése + állapotgép tick.
@@ -580,6 +602,47 @@ class AxiomaticInferenceEngine:
         Visszaadja: True ha sikerült."""
         mem = EpisodicMemory(Path(memory_root))
         return mem.load_engine_state(self, label)
+
+    # -------- Modul D — meta-monitor csatlakozás --------
+
+    def attach_meta_monitor(
+        self,
+        detector: StuckDetector,
+        intervention_mode: str = "log_only",
+        cooldown_steps: int = 100,
+    ) -> None:
+        """Csatlakoztat egy StuckDetector-t és egy intervention-managert.
+
+        intervention_mode:
+          - "log_only": csak detektál és loggol, nem intervenció
+          - "hypnagogic": stuck esetén hipnagóg epizód indítása
+          - "skip": stuck esetén az adott pár-kulcs blokkolása (jelenleg csak log)
+
+        cooldown_steps: az intervenció után ennyi lépésen belül nem fut újra.
+        """
+        self._stuck_detector = detector
+        self._meta_intervention_mode = intervention_mode
+
+        callback: Optional[Callable[[Tuple], bool]] = None
+        if intervention_mode == "hypnagogic":
+            def _trig(fired_key):
+                return self.start_hypnagogic_episode()
+            callback = _trig
+        elif intervention_mode == "log_only":
+            callback = None
+        elif intervention_mode == "skip":
+            callback = None  # placeholder; valódi skip-implementáció későbbi
+        else:
+            raise ValueError(f"unknown intervention_mode: {intervention_mode}")
+
+        self._intervention_manager = InterventionManager(
+            intervention_callback=callback,
+            cooldown_steps=cooldown_steps,
+        )
+
+    def detach_meta_monitor(self) -> None:
+        self._stuck_detector = None
+        self._intervention_manager = None
 
     def _maybe_telemetry_log(self, q: float) -> None:
         if self._policy is None or not self._policy.telemetry_enabled:
