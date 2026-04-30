@@ -22,10 +22,15 @@ LINE_RE = re.compile(
     r"\[TICK:\s*(\d+)\].*?Q=([\d.]+).*?DIST\(MACRO->MICRO\)=(\S+).*?"
     r"B_EFFICIENCY=([\d.]+).*?TOPO=(\d+).*?RRR=([\d.]+).*?ASYM=([\d.]+)"
 )
+# Opcionális priority-partíció mezők (csak ha a regiszternek van priority-vektora)
+PARTITION_RE = re.compile(
+    r"TOPO_HIGH=(\d+).*?TOPO_LOW=(\d+).*?TOPO_RATIO=([\d.]+)"
+)
 
 
 def _parse_log(path: Path) -> Dict[int, Dict[str, float]]:
-    """tick → {q, dist, b, topo, rrr, asym}. inf dist NaN-ra konvertálva."""
+    """tick → {q, dist, b, topo, rrr, asym, [topo_high, topo_low, topo_ratio]}.
+    inf dist NaN-ra konvertálva. Partíció mezők NaN, ha nincsenek a logban."""
     out: Dict[int, Dict[str, float]] = {}
     if not path.is_file():
         return out
@@ -37,14 +42,23 @@ def _parse_log(path: Path) -> Dict[int, Dict[str, float]]:
             tick = int(m.group(1))
             dist_raw = m.group(3)
             dist = float("nan") if dist_raw == "inf" else float(dist_raw)
-            out[tick] = {
+            row: Dict[str, float] = {
                 "q": float(m.group(2)),
                 "dist": dist,
                 "b": float(m.group(4)),
                 "topo": float(m.group(5)),
                 "rrr": float(m.group(6)),
                 "asym": float(m.group(7)),
+                "topo_high": float("nan"),
+                "topo_low": float("nan"),
+                "topo_ratio": float("nan"),
             }
+            pm = PARTITION_RE.search(line)
+            if pm:
+                row["topo_high"] = float(pm.group(1))
+                row["topo_low"] = float(pm.group(2))
+                row["topo_ratio"] = float(pm.group(3))
+            out[tick] = row
     return out
 
 
@@ -71,7 +85,7 @@ def aggregate(manifest_path: Path) -> Dict[str, object]:
         per_seed[int(run["seed"])] = _parse_log(log_path)
 
     all_ticks = sorted({t for series in per_seed.values() for t in series})
-    metrics = ("q", "dist", "topo", "rrr", "asym")
+    metrics = ("q", "dist", "topo", "rrr", "asym", "topo_high", "topo_low", "topo_ratio")
 
     rows: List[Dict[str, object]] = []
     for tick in all_ticks:

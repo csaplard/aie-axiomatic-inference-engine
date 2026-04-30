@@ -142,6 +142,54 @@ def topological_depth(A: np.ndarray) -> int:
     return _condensation_longest_weighted_path(n, adj, comp, n_comp)
 
 
+def topological_depth_partition(
+    A: np.ndarray,
+    node_priority: np.ndarray,
+    q_high: float = 0.67,
+    q_low: float = 0.33,
+) -> Tuple[int, int, float]:
+    """
+    Kvantilis-alapú TOPO partícionálás.
+
+    high_set = csúcsok, ahol priority >= q_high kvantilis (alapértelmezetten felső 33%)
+    low_set  = csúcsok, ahol priority <= q_low  kvantilis (alapértelmezetten alsó 33%)
+
+    Visszaadja: (topo_high, topo_low, ratio)
+        topo_high: leghosszabb irányított út csak a high csúcsokon át (al-gráf)
+        topo_low : ugyanaz a low partícióra
+        ratio    : topo_high / max(topo_low, 1)  (osztás-védve)
+
+    A kvantilis-alapú partíció minden karon konzisztensen 33%-33% méretű csoportokat
+    jelöl ki, függetlenül a priority abszolút eloszlásától — a karok közti
+    összehasonlítás emiatt méltányos.
+    """
+    n, _ = _build_adj_offdiag(A)
+    if n == 0:
+        return 0, 0, 1.0
+    pr = np.asarray(node_priority, dtype=np.float64)
+    if pr.shape[0] != n:
+        return 0, 0, 1.0
+    if n < 2:
+        return topological_depth(A), topological_depth(A), 1.0
+
+    hi_thr = float(np.quantile(pr, q_high))
+    lo_thr = float(np.quantile(pr, q_low))
+    high_mask = pr >= hi_thr
+    low_mask = pr <= lo_thr
+
+    def _sub_topo(mask: np.ndarray) -> int:
+        idx = np.where(mask)[0]
+        if idx.size == 0:
+            return 0
+        sub = A[np.ix_(idx, idx)]
+        return topological_depth(sub)
+
+    th = _sub_topo(high_mask)
+    tl = _sub_topo(low_mask)
+    ratio = float(th) / float(max(tl, 1))
+    return th, tl, ratio
+
+
 def asymmetry_ratio(A: np.ndarray) -> float:
     """
     Egyirányú irányított élek aránya az összes (i!=j) él között:

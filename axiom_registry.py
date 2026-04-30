@@ -28,6 +28,7 @@ class AxiomSpec:
     formula: str
     keywords: Tuple[str, ...]
     variables: Tuple[str, ...]
+    priority_weight: float = 0.5
 
 
 class AxiomRegistry:
@@ -41,6 +42,12 @@ class AxiomRegistry:
         self.nodes: List[AxiomSpec] = []
         id_to_index: Dict[str, int] = {}
         for idx, raw in enumerate(data["nodes"]):
+            pw = raw.get("priority_weight", 0.5)
+            try:
+                pw_f = float(pw)
+            except (TypeError, ValueError):
+                pw_f = 0.5
+            pw_f = max(0.0, min(1.0, pw_f))
             spec = AxiomSpec(
                 id=raw["id"],
                 index=idx,
@@ -48,6 +55,7 @@ class AxiomRegistry:
                 formula=raw.get("formula", ""),
                 keywords=tuple(raw.get("keywords", [])),
                 variables=tuple(raw.get("variables", [])),
+                priority_weight=pw_f,
             )
             self.nodes.append(spec)
             id_to_index[spec.id] = idx
@@ -80,6 +88,10 @@ class AxiomRegistry:
     @property
     def n_axioms(self) -> int:
         return len(self.nodes)
+
+    def priority_array(self) -> List[float]:
+        """priority_weight ∈ [0,1] minden csúcsra (index szerint rendezve)."""
+        return [s.priority_weight for s in self.nodes]
 
     def resolve_id(self, ax_id: str) -> Optional[int]:
         return self._id_to_index.get(ax_id)

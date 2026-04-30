@@ -205,6 +205,8 @@ class AxiomaticInferenceEngine:
     knowledge_matrix: np.ndarray = field(init=False)
     axiom_labels: Dict[int, AxiomDomain] = field(default_factory=dict)
     _registry: Optional[AxiomRegistry] = field(init=False, default=None)
+    # priority_weight csúcsonként (np.array, len=n_nodes); None, ha nincs regiszter
+    _node_priority: Optional[np.ndarray] = field(init=False, default=None)
     _negation: Dict[int, int] = field(init=False, default_factory=dict)
     _source_trust: Dict[str, float] = field(init=False, default_factory=dict)
     _lock: threading.RLock = field(default_factory=threading.RLock, init=False)
@@ -291,6 +293,36 @@ class AxiomaticInferenceEngine:
         except (OSError, ValueError, KeyError):
             self._registry = None
 
+    def _weighted_pair_choice(
+        self, candidates: np.ndarray
+    ) -> Optional[np.ndarray]:
+        """Két csúcs választása a candidates-ból, súlyozva _node_priority szerint.
+        Ha nincs priority, vagy minden súly nulla, uniformra esik vissza."""
+        if candidates.size < 2:
+            return None
+        if self._node_priority is None:
+            return np.random.choice(candidates, size=2, replace=False)
+        weights = self._node_priority[candidates]
+        s = float(weights.sum())
+        if s <= 0:
+            return np.random.choice(candidates, size=2, replace=False)
+        p = weights / s
+        return np.random.choice(candidates, size=2, replace=False, p=p)
+
+    def _weighted_index_pick(self, candidates: np.ndarray) -> int:
+        """Egy csúcs súlyozott választása (heurisztika high/low partícióinak).
+        Uniformra esik vissza priority hiányában vagy nulla-súlyú esetén."""
+        if candidates.size == 0:
+            return -1
+        if self._node_priority is None:
+            return int(np.random.choice(candidates))
+        weights = self._node_priority[candidates]
+        s = float(weights.sum())
+        if s <= 0:
+            return int(np.random.choice(candidates))
+        p = weights / s
+        return int(np.random.choice(candidates, p=p))
+
     def _seed_axioms(self) -> None:
         """Regiszter: kauzális élek + címkék + Hamilton-gyűrű; egyébként alap domain + gyűrű."""
         n = self.n_nodes
@@ -300,6 +332,12 @@ class AxiomaticInferenceEngine:
             for i, j in self._registry.causal_edges:
                 if i < n and j < n:
                     self.knowledge_matrix[i, j] = 1.0
+            # priority_weight betöltése (default 0.5 ott, ahol hiányzik)
+            pri = np.full(n, 0.5, dtype=np.float64)
+            for spec in self._registry.nodes:
+                if spec.index < n:
+                    pri[spec.index] = float(spec.priority_weight)
+            self._node_priority = pri
         else:
             domains = [
                 AxiomDomain.ZFC,
@@ -392,10 +430,23 @@ class AxiomaticInferenceEngine:
         topo = graph_metrics.topological_depth(A)
         asym = graph_metrics.asymmetry_ratio(A)
         rrr = graph_metrics.reverse_rejection_rate(ra, rr)
+        # Priority partíció — csak akkor logoljuk, ha van priority-vektor
+        partition_part = ""
+        if self._node_priority is not None:
+            try:
+                topo_h, topo_l, ratio = graph_metrics.topological_depth_partition(
+                    A, self._node_priority
+                )
+                partition_part = (
+                    f" | TOPO_HIGH={topo_h} | TOPO_LOW={topo_l} | "
+                    f"TOPO_RATIO={ratio:.4f}"
+                )
+            except Exception:
+                partition_part = ""
         line = (
             f"PID={os.getpid()} [TICK: {self._think_step_counter}] Q={q:.4f} | "
             f"DIST(MACRO->MICRO)={ds} | B_EFFICIENCY={self.backend_efficiency_b:.2f} | "
-            f"TOPO={topo} | RRR={rrr:.4f} | ASYM={asym:.4f}\n"
+            f"TOPO={topo} | RRR={rrr:.4f} | ASYM={asym:.4f}{partition_part}\n"
         )
         path = self._resolve_policy_relative_path(self._policy.telemetry_log_path)
         try:
@@ -877,7 +928,11 @@ class AxiomaticInferenceEngine:
             q = self.calculate_q()
             self._finalize_think_step(q)
             return False, q
-        pair = np.random.choice(nonzero_rows, size=2, replace=False)
+        pair = self._weighted_pair_choice(nonzero_rows)
+        if pair is None:
+            q = self.calculate_q()
+            self._finalize_think_step(q)
+            return False, q
         i, j = int(pair[0]), int(pair[1])
         ok = self.verify_logic(i, j)
         added = False
@@ -926,9 +981,14 @@ class AxiomaticInferenceEngine:
         high = np.argsort(deg)[::-1]
         low = np.argsort(deg)
         k = max(1, n // 4)
+        # Súlyozott pickelés a top-k high és top-k low csúcsból.
+        high_pool = high[: min(k, n)]
+        low_pool = low[: min(k, n)]
         for _ in range(min(12, n * 2)):
-            i = int(high[np.random.randint(0, min(k, n))])
-            j = int(low[np.random.randint(0, min(k, n))])
+            i = self._weighted_index_pick(high_pool)
+            j = self._weighted_index_pick(low_pool)
+            if i < 0 or j < 0:
+                continue
             if i == j:
                 continue
             ok = self.verify_logic(i, j)

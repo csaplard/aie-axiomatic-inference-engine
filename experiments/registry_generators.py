@@ -65,6 +65,60 @@ def random_registry(
     }
 
 
+def _priority_thesis_for_dense(n_nodes: int) -> Dict[int, float]:
+    """C kísérlet — strukturált priority a dense_synthetic regiszterhez.
+
+    Ötlet: a 4 körkörös domain (LOGIC, QM, INFO, NEWTON) priority-jét eltoljuk:
+        - LOGIC      → 0.85  (magas)
+        - NEWTON     → 0.75  (magas)
+        - QM         → 0.30  (alacsony)
+        - INFO       → 0.20  (alacsony)
+    Ezzel két jól látható csoport keletkezik a kvantilis-partícióban.
+    """
+    domain_priorities = {0: 0.85, 1: 0.30, 2: 0.20, 3: 0.75}
+    return {i: domain_priorities[i % 4] for i in range(n_nodes)}
+
+
+def add_priority_to_dense(
+    source_path: Path, mode: str, seed: int = 1
+) -> Dict[str, Any]:
+    """
+    A dense_thesis (15 csúcs) regiszteren felvesz egy priority-eloszlást.
+
+    mode:
+      - "thesis":   strukturált (domainenként)
+      - "uniform":  minden csúcs 0.5
+      - "random":   csúcsonként random ∈ [0.1, 0.9]
+      - "inverted": thesis priorities invertálva (1 - p)
+    """
+    with source_path.open(encoding="utf-8") as f:
+        data = json.load(f)
+    n = len(data["nodes"])
+    rng = random.Random(seed)
+
+    if mode == "uniform":
+        prio = {i: 0.5 for i in range(n)}
+    elif mode == "thesis":
+        prio = _priority_thesis_for_dense(n)
+    elif mode == "inverted":
+        thesis = _priority_thesis_for_dense(n)
+        prio = {i: 1.0 - thesis[i] for i in range(n)}
+    elif mode == "random":
+        prio = {i: round(0.1 + 0.8 * rng.random(), 4) for i in range(n)}
+    else:
+        raise ValueError(f"Ismeretlen priority mode: {mode}")
+
+    for i, node in enumerate(data["nodes"]):
+        node["priority_weight"] = float(prio[i])
+
+    data["version"] = data.get("version", "") + f"+priority-{mode}"
+    data["schema_version"] = data.get("schema_version", 1)
+    data["description"] = (
+        (data.get("description", "") + f" | priority_weight: {mode}.").strip()
+    )
+    return data
+
+
 def dense_synthetic_registry(
     n_nodes: int = 15,
     n_forbidden: int = 10,
@@ -286,6 +340,17 @@ def main() -> None:
     p_dense.add_argument("--seed", type=int, default=1)
     p_dense.add_argument("--out", type=Path, required=True)
 
+    p_pri = sub.add_parser(
+        "with_priority",
+        help="Hozzáad priority_weight mezőt (C kísérlet): thesis/uniform/random/inverted.",
+    )
+    p_pri.add_argument("--source", type=Path, required=True)
+    p_pri.add_argument(
+        "--mode", choices=["thesis", "uniform", "random", "inverted"], required=True
+    )
+    p_pri.add_argument("--seed", type=int, default=1)
+    p_pri.add_argument("--out", type=Path, required=True)
+
     p_rim = sub.add_parser("random_immune", help="Strukturált, random immunrendszer.")
     p_rim.add_argument(
         "--source",
@@ -311,6 +376,8 @@ def main() -> None:
             n_negation=args.n_negation,
             seed=args.seed,
         )
+    elif args.cmd == "with_priority":
+        data = add_priority_to_dense(args.source, args.mode, args.seed)
     else:
         ap.error(f"ismeretlen alparancs: {args.cmd}")
     args.out.parent.mkdir(parents=True, exist_ok=True)
