@@ -43,6 +43,9 @@ from meta_monitor import InterventionManager, StuckDetector
 # Modul C — ACC-analóg confidence_score (per-edge episztémikus címkézés)
 from confidence_score import ConfidenceComputer, epistemic_label
 
+# Modul E (egyszerűsített) — predictive coding L1 rules
+from predictive_layer import L1RuleSet, GlobalRule
+
 
 class AxiomDomain(str, Enum):
     LOGIC = "LOGIC"
@@ -231,6 +234,9 @@ class AxiomaticInferenceEngine:
     _meta_intervention_mode: str = field(init=False, default="hypnagogic")
     # Modul C — confidence_score (opcionális komponens)
     _confidence_computer: Optional[ConfidenceComputer] = field(init=False, default=None)
+    # Modul E — predictive coding L1 rules (opcionálisak)
+    _l1_rules: Optional[L1RuleSet] = field(init=False, default=None)
+    _global_rule: Optional[GlobalRule] = field(init=False, default=None)
     # j → list of negation candidate indices (több negáció-pár támogatott)
     _negation: Dict[int, List[int]] = field(init=False, default_factory=dict)
     _source_trust: Dict[str, float] = field(init=False, default_factory=dict)
@@ -507,6 +513,44 @@ class AxiomaticInferenceEngine:
         self._maybe_telemetry_log(q)
         self._maybe_hypnagogic_step(q)
         self._maybe_meta_monitor_step()
+        self._maybe_predictive_step()
+
+    def _maybe_predictive_step(self) -> None:
+        """Modul E: L1 rules és global rule observe + update, ha attached.
+        Minden ATTEMPTED él (kivéve idle/exists) hozzájárul."""
+        if self._l1_rules is None and self._global_rule is None:
+            return
+        snap = self._last_think_snapshot
+        # Csak az érdekes outcome-okra frissítünk: accepted, contradiction, forbidden
+        # Az "exists" és "no_pair" triviálisak, kihagyjuk
+        if snap.i is None or snap.j is None:
+            return
+        if snap.mode == "idle_sparse":
+            return
+        # Outcome osztályozás: accepted vagy nem
+        outcome_accepted = bool(snap.edge_added)
+        # Az "exists" rejekt-elteket szintén kihagyjuk (triviálisak)
+        if (not outcome_accepted) and (snap.edge_reject == "exists"):
+            return
+        d_a = self.axiom_labels.get(int(snap.i))
+        d_b = self.axiom_labels.get(int(snap.j))
+        if self._l1_rules is not None:
+            self._l1_rules.update(d_a, d_b, outcome_accepted)
+        if self._global_rule is not None:
+            self._global_rule.update(d_a, d_b, outcome_accepted)
+
+    def attach_predictive_layer(
+        self,
+        l1_rules: Optional[L1RuleSet] = None,
+        global_rule: Optional[GlobalRule] = None,
+    ) -> None:
+        """Csatlakoztat L1RuleSet és/vagy GlobalRule observer-eket."""
+        self._l1_rules = l1_rules
+        self._global_rule = global_rule
+
+    def detach_predictive_layer(self) -> None:
+        self._l1_rules = None
+        self._global_rule = None
 
     def _maybe_meta_monitor_step(self) -> None:
         """Modul D: stuck-detector observe + intervention tick.
