@@ -191,17 +191,35 @@ class ConfidenceComputer:
         return float(score), float(score_raw)
 
     def contradiction_distance_score(
-        self, A: np.ndarray, i: int, j: int, negation_map: Dict[int, int],
+        self, A: np.ndarray, i: int, j: int,
+        negation_map: Dict[int, Any],
     ) -> Tuple[float, float]:
-        """LOGIKAI: shortest path j → neg(j), kivéve az (i, j) él használatát."""
-        neg_j = negation_map.get(int(j))
-        if neg_j is None:
+        """LOGIKAI: shortest path j → ANY neg(j), kivéve az (i, j) él használatát.
+
+        Visszafelé-kompatibilis: a negation_map értéke lehet egyetlen int
+        (régi API) vagy List[int] (új API, több negation-jelölt).
+        A score a legrövidebb távolságot számolja MINDEN candidate-ra.
+        """
+        candidates_raw = negation_map.get(int(j))
+        if candidates_raw is None:
             return 1.0, float("inf")
-        d = _shortest_path_length_excluding_edge(A, int(j), int(neg_j), int(i), int(j))
-        if math.isinf(d):
-            return 1.0, d
-        score = min(d / self.dist_norm, 1.0)
-        return float(score), float(d)
+        # Listává normalizáljuk
+        if isinstance(candidates_raw, int):
+            candidates = [int(candidates_raw)]
+        else:
+            candidates = [int(x) for x in candidates_raw]
+        if not candidates:
+            return 1.0, float("inf")
+        # Minden candidate-ra: shortest path j → neg, és vegyük a minimumot
+        min_d = float("inf")
+        for nj in candidates:
+            d = _shortest_path_length_excluding_edge(A, int(j), nj, int(i), int(j))
+            if d < min_d:
+                min_d = d
+        if math.isinf(min_d):
+            return 1.0, min_d
+        score = min(min_d / self.dist_norm, 1.0)
+        return float(score), float(min_d)
 
     # ----------------------------------------- aggregáció
     def compute(

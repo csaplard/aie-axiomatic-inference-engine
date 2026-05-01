@@ -231,7 +231,8 @@ class AxiomaticInferenceEngine:
     _meta_intervention_mode: str = field(init=False, default="hypnagogic")
     # Modul C — confidence_score (opcionális komponens)
     _confidence_computer: Optional[ConfidenceComputer] = field(init=False, default=None)
-    _negation: Dict[int, int] = field(init=False, default_factory=dict)
+    # j → list of negation candidate indices (több negáció-pár támogatott)
+    _negation: Dict[int, List[int]] = field(init=False, default_factory=dict)
     _source_trust: Dict[str, float] = field(init=False, default_factory=dict)
     _lock: threading.RLock = field(default_factory=threading.RLock, init=False)
     _think_thread: Optional[threading.Thread] = None
@@ -328,12 +329,18 @@ class AxiomaticInferenceEngine:
             self._opt.sync_from_policy(self._policy)
 
     def _build_negation_map(self) -> None:
+        """j → list of negation candidate indices.
+
+        Egy j több párba is beletartozhat (pl. ha LOGIC × INFO Cartesian
+        expansion után egy LOGIC csúcs minden INFO csúcs negációjának
+        számít). A `_would_contradict_edge` MIND a candidate-eket ellenőrzi.
+        """
         self._negation = {}
         if self._registry is None:
             return
         for a, b in self._registry.logical_negation_pairs:
-            self._negation[a] = b
-            self._negation[b] = a
+            self._negation.setdefault(a, []).append(b)
+            self._negation.setdefault(b, []).append(a)
 
     def _load_registry(self) -> None:
         self._registry = None
@@ -921,10 +928,16 @@ class AxiomaticInferenceEngine:
         Az AWAKE/COOLDOWN módban mindig 1.0 (kemény)."""
         if self._policy is not None and self._policy.ignore_negation_contradictions:
             return False
-        neg_j = self._negation.get(j)
-        if neg_j is None:
+        candidates = self._negation.get(j)
+        if not candidates:
             return False
-        if not self._has_path_unlocked(A, i, neg_j):
+        # Bármely candidate-ra van-e i → ... → neg(j)? Ha van legalább egy → contradiction
+        any_path = False
+        for nj in candidates:
+            if self._has_path_unlocked(A, i, nj):
+                any_path = True
+                break
+        if not any_path:
             return False
         # Talált contradiction: alkalmazzuk a hipnagóg relaxációt, ha aktív
         if self._hypnagogic_state is not None:

@@ -92,6 +92,44 @@ class AxiomRegistry:
             if a in id_to_index and b in id_to_index:
                 self.logical_negation_pairs.append((id_to_index[a], id_to_index[b]))
 
+        # Domain-szintű negation_pairs: Cartesian expansion node-szintre.
+        # Ha "negation_domain_pairs": [["LOGIC", "INFO"], ...] szerepel,
+        # minden LOGIC csúcsot összepárosítunk minden INFO csúccsal.
+        # Védelem a kombinatorikai robbanás ellen: max_per_domain_pair cap.
+        self.negation_domain_pairs: List[Tuple[str, str]] = []
+        domain_pairs_raw = data.get("negation_domain_pairs", [])
+        max_per_pair = int(data.get("negation_domain_pairs_cap", 500))
+        domain_to_indices: Dict[str, List[int]] = {}
+        for spec in self.nodes:
+            domain_to_indices.setdefault(spec.domain, []).append(spec.index)
+        added_pairs: Set[Tuple[int, int]] = set(
+            (a, b) for a, b in self.logical_negation_pairs
+        )
+        added_pairs |= {(b, a) for a, b in self.logical_negation_pairs}
+        # Reprodukálhatóság: deterministic shuffle a registry-szintű seed alapján
+        seed = int(data.get("negation_domain_pairs_seed", 42))
+        import random as _py_random
+        rng = _py_random.Random(seed)
+
+        for da, db in domain_pairs_raw:
+            self.negation_domain_pairs.append((str(da), str(db)))
+            ia = list(domain_to_indices.get(str(da), []))
+            ib = list(domain_to_indices.get(str(db), []))
+            # Az ÖSSZES Cartesian pár listáját generáljuk, majd shuffle + cap
+            all_pairs = [(u, v) for u in ia for v in ib if u != v]
+            rng.shuffle(all_pairs)
+            count = 0
+            for u, v in all_pairs:
+                pair = (u, v)
+                if pair in added_pairs:
+                    continue
+                if count >= max_per_pair:
+                    break
+                self.logical_negation_pairs.append(pair)
+                added_pairs.add(pair)
+                added_pairs.add((v, u))
+                count += 1
+
     @property
     def n_axioms(self) -> int:
         return len(self.nodes)

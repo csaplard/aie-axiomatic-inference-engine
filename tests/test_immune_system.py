@@ -89,9 +89,9 @@ class ImmuneSystemTests(unittest.TestCase):
         self.assertEqual(reject, "contradiction")
 
     def test_negation_map_is_symmetric(self) -> None:
-        # _build_negation_map szimmetrikussá teszi a párokat
-        self.assertEqual(self.eng._negation.get(0), 2)  # A -> notA
-        self.assertEqual(self.eng._negation.get(2), 0)  # notA -> A
+        # _build_negation_map szimmetrikussá teszi a párokat (új list-API)
+        self.assertIn(2, self.eng._negation.get(0, []))  # A -> notA
+        self.assertIn(0, self.eng._negation.get(2, []))  # notA -> A
 
 
 if __name__ == "__main__":
