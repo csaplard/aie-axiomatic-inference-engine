@@ -33,3 +33,142 @@ Thumbs.db
 *.swp
 *~
 .claude/
+
+# Tutor-experiment (LOKÁLIS, NEM GitHub — felhasználó kérése szerint privát)
+tutor.py
+tutor_curriculum.py
+EXPERIMENT_TUTOR.md
+tests/test_tutor.py
+experiments/tutor/
+experiments/run_tutor.py
+experiments/runs/tutor_confound/
+experiments/runs/tutor_formal/
+experiments/runs/_run_tutor.log
+
+# Modul B+DECAY (kísérleti doc + run output LOKÁLIS; decay_tick() PUBLIKUS
+# axiom_kernel-ben → test_decay.py is PUBLIKUS, hogy a publikus API tesztelhető legyen)
+EXPERIMENT_DECAY.md
+experiments/runs/tutor_decay_confound/
+experiments/runs/tutor_decay_formal/
+experiments/runs/_run_decay_formal.log
+
+# Idea 5 — Mode Labeling: engine_mode.py + test_engine_mode.py PUBLIKUS
+# (engine_mode-ot az axiom_kernel importálja; test publikus a publikus API-hoz).
+# A kísérleti doc LOKÁLIS.
+EXPERIMENT_MODE_LABELING.md
+
+# Modul F — Continuous Daemon (engine_daemon.py is LOKÁLIS — nem importálja
+# az axiom_kernel, csak fordítva, így biztonságosan privát. A doc, teszt,
+# smoke-run is privát.)
+engine_daemon.py
+EXPERIMENT_DAEMON.md
+tests/test_engine_daemon.py
+experiments/smoke_daemon.py
+
+# Modul H pilot — Sleep Consolidation (LOKÁLIS, NEM GitHub)
+EXPERIMENT_H_PRE_REG.md
+EXPERIMENT_H.md
+experiments/run_H.py
+experiments/runs/H_confound/
+experiments/runs/H_formal/
+experiments/runs/H_smoke/
+
+# Idea 4 — Oscillatory Parameter Modulation pilot (LOKÁLIS, NEM GitHub)
+EXPERIMENT_OSC_PRE_REG.md
+EXPERIMENT_OSC.md
+experiments/run_OSC.py
+experiments/runs/OSC_confound/
+experiments/runs/OSC_formal/
+experiments/runs/OSC_smoke/
+
+# Modul H replay-edge (10. kísérlet): replay_active() PUBLIKUS axiom_kernel-ben
+# → test_replay_active.py is PUBLIKUS. A doc + runner LOKÁLIS.
+EXPERIMENT_H2_PRE_REG.md
+EXPERIMENT_H2.md
+experiments/run_H2.py
+experiments/runs/H2_confound/
+experiments/runs/H2_formal/
+
+# Modul AC — Adaptive Consolidation timing (11. kísérlet)
+EXPERIMENT_AC_PRE_REG.md
+EXPERIMENT_AC.md
+experiments/run_AC.py
+experiments/runs/AC_confound/
+experiments/runs/AC_confound2/
+experiments/runs/AC_formal/
+
+# Modul G — Self-Loop pilot (12. kísérlet)
+EXPERIMENT_G_PRE_REG.md
+EXPERIMENT_G.md
+experiments/run_G.py
+experiments/runs/G_smoke/
+experiments/runs/G_formal/
+
+# Modul G2 — Self-Loop dissection (13. kísérlet, 12. design-hibájának javítása)
+EXPERIMENT_G2_PRE_REG.md
+EXPERIMENT_G2.md
+experiments/run_G2.py
+experiments/runs/G2_smoke/
+experiments/runs/G2_formal/
+
+# Modul HG — H + G interakció (14. kísérlet, super-additive)
+EXPERIMENT_HG_PRE_REG.md
+EXPERIMENT_HG.md
+experiments/run_HG.py
+experiments/runs/HG_smoke/
+experiments/runs/HG_formal/
+
+# Modul HG × AC — szinergia + adaptív triggering (15. kísérlet, gating-disruption)
+EXPERIMENT_HG_AC_PRE_REG.md
+EXPERIMENT_HG_AC.md
+experiments/run_HG_AC.py
+experiments/runs/HG_AC_smoke/
+experiments/runs/HG_AC_confound/
+experiments/runs/HG_AC_formal/
+
+# Modul H teljes verzió — generalization (16. kísérlet): generalize_transitive()
+# PUBLIKUS axiom_kernel-ben → test_generalize_transitive.py is PUBLIKUS.
+# A doc + runner LOKÁLIS.
+EXPERIMENT_GEN_PRE_REG.md
+EXPERIMENT_GEN.md
+experiments/run_GEN.py
+experiments/runs/GEN_confound/
+experiments/runs/GEN_smoke/
+experiments/runs/GEN_formal/
+
+# Modul MF — Mastery-Feedback Replay (17. kísérlet): targeted_replay()
+# PUBLIKUS axiom_kernel-ben → test_targeted_replay.py is PUBLIKUS.
+# A doc + runner LOKÁLIS.
+EXPERIMENT_MF_PRE_REG.md
+EXPERIMENT_MF.md
+experiments/run_MF.py
+experiments/runs/MF_smoke/
+experiments/runs/MF_confound/
+experiments/runs/MF_formal/
+
+# L18 Emergence Match Analysis (post-hoc, CÁFOLT — emergens élek random zaj)
+EXPERIMENT_EMERGENCE_MATCH.md
+experiments/analyze_emergent_match.py
+experiments/runs/EMERGENCE_match/
+
+# LinkedIn-ready figura
+experiments/make_aie_figure_10.py
+experiments/aie_arc_10_experiments.png
+experiments/aie_arc_11_experiments.png
+experiments/aie_arc_12_experiments.png
+experiments/aie_arc_13_experiments.png
+experiments/aie_arc_14_experiments.png
+experiments/aie_arc_15_experiments.png
+experiments/aie_arc_16_experiments.png
+experiments/aie_arc_17_experiments.png
+experiments/aie_arc_18_observations.png
+
+# Brainstorm-fájlok (privát, gondolkodás közbeni jegyzetek)
+ideas.md
+IDEAS (1).md
+
+# Retrospektív szintézis (LOKÁLIS, NEM GitHub)
+RETROSPECTIVE_16.md
+
+# LinkedIn poszt vázlat (LOKÁLIS — te döntsd el, hogy posztolod)
+linkedin_post_18.md

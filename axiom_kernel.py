@@ -33,6 +33,12 @@ from self_optimization import (
 from emission_logger import EmissionLogger
 from fisher_realtime import FisherRealtime
 from hypnagogic_state import HypnagogicPhase, HypnagogicStateMachine
+from engine_mode import (
+    EngineMode,
+    ModeProfile,
+    DEFAULT_PROFILES as _MODE_DEFAULT_PROFILES,
+    default_profile as _mode_default_profile,
+)
 
 # Modul B — epizodikus memória (narrow scope: persistence + reload)
 from episodic_memory import EpisodicMemory
@@ -228,6 +234,12 @@ class AxiomaticInferenceEngine:
     _fisher_realtime: Optional[FisherRealtime] = field(init=False, default=None)
     _hypnagogic_state: Optional[HypnagogicStateMachine] = field(init=False, default=None)
     _hypnagogic_log_path: Optional[Path] = field(init=False, default=None)
+    # Idea 5 — Mode Labeling (egységes mód-címkézés). Az _engine_mode FOCUSED
+    # alapértelmezetten; ha a hipnagóg state machine NEM aktív (AWAKE/COOLDOWN
+    # vagy nincs inicializálva), a kernel ezt használja. CONSOLIDATING-ban
+    # a `_try_add_edge_with_reason` blokkolja az új él felvételét.
+    _engine_mode: EngineMode = field(init=False, default=EngineMode.FOCUSED)
+    _mode_profiles: Dict[EngineMode, ModeProfile] = field(init=False, default_factory=dict)
     # Modul D — meta-monitor (opcionális komponensek)
     _stuck_detector: Optional[StuckDetector] = field(init=False, default=None)
     _intervention_manager: Optional[InterventionManager] = field(init=False, default=None)
@@ -268,6 +280,9 @@ class AxiomaticInferenceEngine:
         self._think_pending = _ThinkPending()
         self._reverse_attempt_count = 0
         self._reverse_reject_contradiction_count = 0
+        # Idea 5: alap mód-profilok (felülírható futás közben set_mode_profile-lal)
+        if not self._mode_profiles:
+            self._mode_profiles = {m: _mode_default_profile(m) for m in _MODE_DEFAULT_PROFILES}
         self._load_policy()
         if self._policy is not None:
             self._seed_hamilton_ring = self._policy.seed_hamilton_ring
@@ -495,7 +510,168 @@ class AxiomaticInferenceEngine:
             return
         self._opt.record(self._build_system_metrics())
 
+    def decay_tick(self) -> None:
+        """Tutor-experiment: egy 'üres' lépés, ami csak decay-t alkalmaz a
+        heurisztikus think_step machinery NÉLKÜL. A tutor használja az injekciók
+        között, hogy a decay érzékelhető legyen."""
+        self._apply_decay()
+        self._think_step_counter += 1
+
+    def targeted_replay(self, targets: List[Tuple[int, int]], max_reinforce: int = 5) -> int:
+        """Modul MF — mastery-vezérelt replay.
+
+        A meglévő replay_active() RANDOM éleket erősít. Ez itt **célzott**:
+        a curriculum által definiált "ground truth" training_edges közül
+        választ random sorrendben, és visszaerősíti azokat, amelyek **léteznek**
+        a gráfban (akár direkt él, akár path-szinten).
+
+        targets: (i, j) tuple-ok listája — a curriculum training_edges.
+        max_reinforce: max edges to set to 1.0 per call (megfelel a
+                       replay_active K paraméterének).
+
+        Algoritmus:
+          1. Random sorrend a targets-en.
+          2. Each (i, j) target esetén:
+             - Ha A[i,j] > 0 (direkt él, akár decay-zett): A[i,j] = 1.0 (1 él).
+             - Elif path i→...→j: shortest_path-on minden (u,v)-t 1.0-ra (több él).
+             - Else: skip (engine nem "tudja" még → nincs feedback signal).
+          3. Stop, ha max_reinforce élt elértünk.
+
+        Visszaadja: ténylegesen visszaerősített élek száma.
+        """
+        if max_reinforce <= 0 or not targets:
+            return 0
+        # Numpy RNG által determinisztikus shuffle (a policy seed-eli)
+        idx_perm = np.random.permutation(len(targets))
+        n_reinforced = 0
+        with self._lock:
+            A = self.knowledge_matrix
+            for k in idx_perm:
+                if n_reinforced >= max_reinforce:
+                    break
+                i, j = int(targets[k][0]), int(targets[k][1])
+                if i == j or i < 0 or j < 0 or i >= A.shape[0] or j >= A.shape[1]:
+                    continue
+                if A[i, j] > 0:
+                    A[i, j] = 1.0
+                    n_reinforced += 1
+                else:
+                    path = self.shortest_path(i, j)
+                    if path is None or len(path) < 2:
+                        continue
+                    for u, v in zip(path[:-1], path[1:]):
+                        if n_reinforced >= max_reinforce:
+                            break
+                        A[int(u), int(v)] = 1.0
+                        n_reinforced += 1
+        return n_reinforced
+
+    def generalize_transitive(self, theta: float = 0.7, k: int = 5) -> int:
+        """Modul H generalization — strukturális tranzitív-zárás emergencia.
+
+        A CONSOLIDATING fázisban az engine **lokálisan** detektál transitive
+        closure lehetőségeket: ha létezik (i, j, k) háromszög, ahol A[i,j] >= theta
+        és A[j,k] >= theta, de A[i,k] == 0 (nincs még közvetlen él i-ből k-ba),
+        akkor új él emerál: A[i,k] = 1.0.
+
+        Ez **nem** a Modul E (predictive coding L1, CÁFOLT) — ott domain-pár
+        statisztikákból szabály-felismerés volt. Itt **strukturális, lokális**:
+        két erős konszekutív él alapján emerál a harmadik.
+
+        theta: alsó küszöb az "erős" élhez (default 0.7).
+        k: hány closure / hívás (default 5, mint a replay K).
+
+        Visszaadja: a ténylegesen emergált új élek számát.
+        """
+        if k <= 0:
+            return 0
+        with self._lock:
+            A = self.knowledge_matrix
+            # Strong edges mátrixa (off-diagonális, érték >= theta)
+            strong = (A >= theta)
+            np.fill_diagonal(strong, False)
+            # (i, k) ahol A[i,k] == 0 és létezik j: strong[i,j] és strong[j,k]
+            # Két strong egymás után: két_lépéses elérhetőség
+            two_hop = strong @ strong  # (n,n) mátrix, két_hop counts
+            # Csak ahol nincs még direkt él
+            no_direct = (A == 0)
+            np.fill_diagonal(no_direct, False)
+            # Jelölt mátrix: van két-hop ÉS nincs direkt él
+            cand = (two_hop > 0) & no_direct
+            cand_i, cand_k = np.nonzero(cand)
+            n_cand = cand_i.size
+            if n_cand == 0:
+                return 0
+            n_pick = int(min(k, n_cand))
+            sel = np.random.choice(n_cand, size=n_pick, replace=False)
+            for s in sel:
+                A[int(cand_i[s]), int(cand_k[s])] = 1.0
+        return n_pick
+
+    def replay_active(self, k: int = 5, lower: float = 0.05) -> int:
+        """Modul H replay-edge — aktív, engine-vezérelt replay.
+
+        A CONSOLIDATING fázisban az engine **önmaga** választ ki és erősít vissza
+        decay-veszélyben lévő éleket — biológiai NREM-replay analóg.
+
+        Mechanika:
+          1. Off-diagonális élek, amelyek `lower <= A[i,j] < 1.0` (decay-veszélyben,
+             de még pruning küszöb felett).
+          2. Random kiválasztás közülük (numpy RNG; a policy `random_seed`
+             determinisztikussá teszi).
+          3. Visszaerősítés A[i,j] = 1.0-ra.
+
+        k: hány élt erősítsünk vissza (ha kevesebb jelölt van, ennyit erősítünk).
+        lower: a kiválasztási alsó küszöb. Default 0.05 = decay_threshold,
+               kizárja a pruning alá esőket.
+
+        Visszaadja: a ténylegesen visszaerősített élek számát.
+        """
+        if k <= 0:
+            return 0
+        with self._lock:
+            A = self.knowledge_matrix
+            # Off-diagonális, lower <= érték < 1.0 jelöltek
+            mask = (A >= lower) & (A < 1.0)
+            np.fill_diagonal(mask, False)
+            idx_i, idx_j = np.nonzero(mask)
+            n_cand = idx_i.size
+            if n_cand == 0:
+                return 0
+            n_pick = int(min(k, n_cand))
+            # Reprodukálható kiválasztás a numpy RNG-vel (a policy seed-eli)
+            sel = np.random.choice(n_cand, size=n_pick, replace=False)
+            for s in sel:
+                A[int(idx_i[s]), int(idx_j[s])] = 1.0
+        return n_pick
+
+    def _apply_decay(self) -> None:
+        """Modul B+DECAY: minden think_step után az élek decay-zenek.
+
+        knowledge_matrix *= decay_factor; a diagonálist 1.0-ra korrigáljuk
+        (self-loops szimbolizálják a csúcs identitását, soha nem decay-znek);
+        a decay_threshold alá esett élek 0.0-ra törlődnek.
+        """
+        if self._policy is None or not self._policy.decay_enabled:
+            return
+        df = float(self._policy.decay_factor)
+        if df >= 1.0:
+            return  # no-op
+        thr = float(self._policy.decay_threshold)
+        with self._lock:
+            A = self.knowledge_matrix
+            A *= df
+            # Diagonális mindig 1.0
+            np.fill_diagonal(A, 1.0)
+            # Threshold-elés: a decay_threshold alatti élek (off-diag) törlődnek
+            mask = A < thr
+            np.fill_diagonal(mask, False)  # diagonálist soha
+            A[mask] = 0.0
+
     def _finalize_think_step(self, q: float) -> None:
+        # DECAY első: a friss élet még az erősített állapotban hagyjuk,
+        # de a többi él decay-zik
+        self._apply_decay()
         self._think_step_counter += 1
         with self._lock:
             self._last_think_snapshot = ThinkStepSnapshot(
@@ -653,16 +829,61 @@ class AxiomaticInferenceEngine:
         return self._hypnagogic_state.start_entry()
 
     def get_current_relaxation(self) -> Dict[str, Any]:
-        """A hipnagóg állapotgép aktuális lazítási paramétereit adja vissza.
-        AWAKE / nincs állapotgép → szigorú alapértelmezések."""
-        if self._hypnagogic_state is None:
-            return {
-                "forbidden_weight": 1.0,
-                "negation_threshold": 1.0,
-                "far_domain_pref": 0.0,
-                "verify_chain_depth": 1,
-            }
-        return dict(self._hypnagogic_state.current_relaxation())
+        """A jelenlegi lazítási paraméterek dict-je.
+
+        Prioritás (Idea 5 — Mode Labeling):
+          1. Ha a hipnagóg state machine **aktív** (ENTRY / DEEP / EXIT),
+             az állapotgép paraméterei dominálnak (változatlan korábbi viselkedés).
+          2. Egyébként: a jelenlegi `_engine_mode` profilja.
+        Ez backward-kompatibilis: ha nincs hipnagóg state machine vagy AWAKE/COOLDOWN
+        fázisban van, az _engine_mode alapértelmezetten FOCUSED → szigorú értékek
+        (ugyanaz, mint a korábbi hard-coded fallback).
+        """
+        if self._hypnagogic_state is not None:
+            phase = self._hypnagogic_state.current_phase()
+            if phase not in (HypnagogicPhase.AWAKE, HypnagogicPhase.COOLDOWN):
+                return dict(self._hypnagogic_state.current_relaxation())
+        # Idea 5: aktív mód-profil
+        prof = self._mode_profiles.get(self._engine_mode) or _mode_default_profile(self._engine_mode)
+        return prof.to_relaxation_dict()
+
+    # -------- Idea 5 — Mode Labeling API --------
+
+    def current_mode(self) -> EngineMode:
+        """Az engine jelenlegi (címkézett) üzemmódja.
+
+        Megjegyzés: ha a hipnagóg state machine ENTRY/DEEP/EXIT-ben van, a
+        relaxation dict az állapotgépből jön, de az `_engine_mode` címke
+        attól még a háttér-mód lehet (pl. FOCUSED). Ez tudatos választás —
+        a két mechanizmus független rétegben él.
+        """
+        return self._engine_mode
+
+    def set_mode(self, mode: EngineMode) -> None:
+        """Átállítja az engine címkézett módját. Nem indít hipnagóg
+        episode-ot — a státusz-gép függetlenül kezelt."""
+        if not isinstance(mode, EngineMode):
+            raise TypeError(f"mode must be EngineMode, got {type(mode).__name__}")
+        self._engine_mode = mode
+
+    def current_mode_profile(self) -> ModeProfile:
+        """A jelenlegi mód aktív (esetleg felülírt) profilja."""
+        return self._mode_profiles.get(self._engine_mode) or _mode_default_profile(self._engine_mode)
+
+    def set_mode_profile(self, mode: EngineMode, profile: ModeProfile) -> None:
+        """Egy mód profilját felülírja (pl. Idea 4 oszcillációhoz, vagy
+        kísérleti hangoláshoz). Csak az adott engine-példányt érinti."""
+        if not isinstance(mode, EngineMode):
+            raise TypeError(f"mode must be EngineMode, got {type(mode).__name__}")
+        if not isinstance(profile, ModeProfile):
+            raise TypeError(f"profile must be ModeProfile, got {type(profile).__name__}")
+        self._mode_profiles[mode] = profile
+
+    def accept_new_edges(self) -> bool:
+        """A jelenlegi mód engedi-e új él felvételét (CONSOLIDATING → False).
+        DECAY mód re-attempt strengthening-je nem új él, így az engedélyezett
+        marad CONSOLIDATING alatt is."""
+        return bool(self.current_mode_profile().accept_new_edges)
 
     # -------- Modul B — epizodikus memória convenience metódusok --------
 
@@ -790,16 +1011,17 @@ class AxiomaticInferenceEngine:
             return False
         if self._registry is None or (i, j) not in self._registry.forbidden_edges:
             return False
-        # Hipnagóg lazítás: forbidden_weight ∈ [0, 1] valószínűséggel hat a tilalom
-        if self._hypnagogic_state is not None:
-            relax = self._hypnagogic_state.current_relaxation()
-            w = float(relax.get("forbidden_weight", 1.0))
-            if w >= 1.0:
-                return True
-            if w <= 0.0:
-                return False
-            return bool(np.random.random() < w)
-        return True
+        # Idea 5 — egységes relaxation forrás (hipnagóg state machine prioritást
+        # élvez aktív állapotban; egyébként engine_mode profil). Idea 4 (oszcilláció)
+        # ezen keresztül vezérel: minden tickben más forbidden_weight lehet, ha
+        # a futtató set_mode_profile-lal modulálja a FOCUSED profilt.
+        relax = self.get_current_relaxation()
+        w = float(relax.get("forbidden_weight", 1.0))
+        if w >= 1.0:
+            return True
+        if w <= 0.0:
+            return False
+        return bool(np.random.random() < w)
 
     def _has_path_unlocked(self, A: np.ndarray, start: int, end: int) -> bool:
         """Irányított út BFS (zároló nélkül)."""
@@ -983,16 +1205,14 @@ class AxiomaticInferenceEngine:
                 break
         if not any_path:
             return False
-        # Talált contradiction: alkalmazzuk a hipnagóg relaxációt, ha aktív
-        if self._hypnagogic_state is not None:
-            relax = self._hypnagogic_state.current_relaxation()
-            t = float(relax.get("negation_threshold", 1.0))
-            if t >= 1.0:
-                return True
-            if t <= 0.0:
-                return False
-            return bool(np.random.random() < t)
-        return True
+        # Idea 5 — egységes relaxation forrás (Idea 4 oszcilláció ezen keresztül vezérel).
+        relax = self.get_current_relaxation()
+        t = float(relax.get("negation_threshold", 1.0))
+        if t >= 1.0:
+            return True
+        if t <= 0.0:
+            return False
+        return bool(np.random.random() < t)
 
     def get_source_reliability(self, source_id: str) -> float:
         return self._source_trust.get(source_id, 1.0)
@@ -1112,13 +1332,26 @@ class AxiomaticInferenceEngine:
         Él felvétele tiltás/negáció nélkül. Vissza: (True, None) ha felkerült;
         (False, 'forbidden'|'exists'|'contradiction') ha nem.
         „Vissza” próba: ha már van j→…→i út és i→j-et próbálunk — reverse számlálók (RRR).
+
+        DECAY mód (policy.decay_enabled=True): ha az él már létezik, NEM rejekt-eljük
+        ("exists" helyett), hanem **erősítjük** (Hebbian re-attempt strengthening).
         """
         if self.is_edge_forbidden(i, j):
             return False, "forbidden"
         with self._lock:
             A = self.knowledge_matrix
             if A[i, j] > 0:
+                # DECAY: re-attempt → strengthening, accepted-nek számít.
+                # Ezt CONSOLIDATING is engedi: nem új él, csak meglévő erősítése.
+                if self._policy is not None and self._policy.decay_enabled:
+                    A[i, j] = 1.0
+                    return True, None
                 return False, "exists"
+            # Idea 5 — CONSOLIDATING mód: új él felvétele blokkolt.
+            # A meglévő gráf rendeződik (decay/pruning), de új struktúra nem
+            # születik. Modul H replay-fázis csíraszerű implementáció.
+            if not self.accept_new_edges():
+                return False, "consolidating_blocked"
             is_reverse = self._has_path_unlocked(A, j, i)
             if is_reverse:
                 self._reverse_attempt_count += 1

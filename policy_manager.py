@@ -111,6 +111,12 @@ class DiscoveryPolicy:
     random_seed: Optional[int] = None
     # Hipnagóg al-policy (alapértelmezésben kikapcsolva)
     hypnagogic: HypnagogicPolicy = field(default_factory=HypnagogicPolicy)
+    # Modul B+DECAY (toggleable): ha True, a knowledge_matrix folytonos
+    # erősség-értékekkel él, decay_factor szorzóval csökken minden think_step-ben.
+    # Az élek decay_threshold alá süllyedve törlődnek.
+    decay_enabled: bool = False
+    decay_factor: float = 0.999      # per think_step szorzó (1.0 = no decay)
+    decay_threshold: float = 0.05    # ez alatt eltűnik az él
 
 
 def _default_optimization_policy() -> OptimizationPolicy:
@@ -185,6 +191,9 @@ def _parse_discovery_policy(raw: Dict[str, Any]) -> DiscoveryPolicy:
             else None
         ),
         hypnagogic=_parse_hypnagogic_policy(raw.get("hypnagogic") or {}),
+        decay_enabled=bool(raw.get("decay_enabled", False)),
+        decay_factor=float(raw.get("decay_factor", 0.999)),
+        decay_threshold=float(raw.get("decay_threshold", 0.05)),
     )
 
 
@@ -364,6 +373,18 @@ class PolicyManager:
     @property
     def random_seed(self) -> Optional[int]:
         return self.discovery_policy().random_seed
+
+    @property
+    def decay_enabled(self) -> bool:
+        return self.discovery_policy().decay_enabled
+
+    @property
+    def decay_factor(self) -> float:
+        return self.discovery_policy().decay_factor
+
+    @property
+    def decay_threshold(self) -> float:
+        return self.discovery_policy().decay_threshold
 
     def sample_cpu_percent(self) -> Optional[float]:
         """Folyamat CPU% (nem blokkoló, ha psutil elérhető)."""
